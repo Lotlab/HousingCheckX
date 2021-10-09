@@ -35,8 +35,8 @@ namespace HousingCheck
             this.housingCheckBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.pluginControlBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.panel1 = new System.Windows.Forms.Panel();
-            this.panel2 = new System.Windows.Forms.Panel();
-            this.groupBoxNotify = new System.Windows.Forms.GroupBox();
+            this.groupBoxLog = new System.Windows.Forms.GroupBox();
+            this.textBoxLog = new System.Windows.Forms.TextBox();
             this.groupBoxControl = new System.Windows.Forms.GroupBox();
             this.buttonCopyToClipboard = new System.Windows.Forms.Button();
             this.buttonSaveToFile = new System.Windows.Forms.Button();
@@ -51,21 +51,32 @@ namespace HousingCheck
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxUpload = new System.Windows.Forms.TextBox();
             this.checkBoxUpload = new System.Windows.Forms.CheckBox();
-            this.groupBoxLog = new System.Windows.Forms.GroupBox();
-            this.textBoxLog = new System.Windows.Forms.TextBox();
-            this.checkboxTTS = new System.Windows.Forms.CheckBox();
-            this.checkBoxNotification = new System.Windows.Forms.CheckBox();
+            this.groupBoxNotify = new System.Windows.Forms.GroupBox();
+            this.groupBoxNotifyCheck = new System.Windows.Forms.GroupBox();
+            this.buttonNotifyCheckTest = new System.Windows.Forms.Button();
+            this.numericUpDownNotifyCheck = new System.Windows.Forms.NumericUpDown();
+            this.label5 = new System.Windows.Forms.Label();
+            this.checkBoxNotifyCheck = new System.Windows.Forms.CheckBox();
+            this.groupBoxNotifyHouse = new System.Windows.Forms.GroupBox();
+            this.checkBoxNotifyML = new System.Windows.Forms.CheckBox();
+            this.checkBoxNotifyS = new System.Windows.Forms.CheckBox();
             this.buttonNotifyTest = new System.Windows.Forms.Button();
+            this.checkBoxNotification = new System.Windows.Forms.CheckBox();
+            this.checkboxTTS = new System.Windows.Forms.CheckBox();
+            this.panel2 = new System.Windows.Forms.Panel();
             this.groupBoxTable.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.housingCheckBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginControlBindingSource)).BeginInit();
             this.panel1.SuspendLayout();
-            this.panel2.SuspendLayout();
-            this.groupBoxNotify.SuspendLayout();
+            this.groupBoxLog.SuspendLayout();
             this.groupBoxControl.SuspendLayout();
             this.groupBoxUpload.SuspendLayout();
-            this.groupBoxLog.SuspendLayout();
+            this.groupBoxNotify.SuspendLayout();
+            this.groupBoxNotifyCheck.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).BeginInit();
+            this.groupBoxNotifyHouse.SuspendLayout();
+            this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBoxTable
@@ -103,35 +114,34 @@ namespace HousingCheck
             this.panel1.Controls.Add(this.groupBoxNotify);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Right;
             this.panel1.Location = new System.Drawing.Point(589, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel1.Margin = new System.Windows.Forms.Padding(2);
             this.panel1.Name = "panel1";
             this.panel1.Padding = new System.Windows.Forms.Padding(7, 6, 14, 7);
             this.panel1.Size = new System.Drawing.Size(351, 655);
             this.panel1.TabIndex = 4;
             // 
-            // panel2
+            // groupBoxLog
             // 
-            this.panel2.Controls.Add(this.groupBoxTable);
-            this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel2.Location = new System.Drawing.Point(0, 0);
-            this.panel2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.panel2.Name = "panel2";
-            this.panel2.Padding = new System.Windows.Forms.Padding(14, 6, 7, 7);
-            this.panel2.Size = new System.Drawing.Size(589, 655);
-            this.panel2.TabIndex = 5;
+            this.groupBoxLog.Controls.Add(this.textBoxLog);
+            this.groupBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxLog.Location = new System.Drawing.Point(7, 315);
+            this.groupBoxLog.Name = "groupBoxLog";
+            this.groupBoxLog.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
+            this.groupBoxLog.Size = new System.Drawing.Size(330, 333);
+            this.groupBoxLog.TabIndex = 12;
+            this.groupBoxLog.TabStop = false;
+            this.groupBoxLog.Text = "日志";
             // 
-            // groupBoxNotify
+            // textBoxLog
             // 
-            this.groupBoxNotify.Controls.Add(this.buttonNotifyTest);
-            this.groupBoxNotify.Controls.Add(this.checkBoxNotification);
-            this.groupBoxNotify.Controls.Add(this.checkboxTTS);
-            this.groupBoxNotify.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNotify.Location = new System.Drawing.Point(7, 6);
-            this.groupBoxNotify.Name = "groupBoxNotify";
-            this.groupBoxNotify.Size = new System.Drawing.Size(330, 45);
-            this.groupBoxNotify.TabIndex = 9;
-            this.groupBoxNotify.TabStop = false;
-            this.groupBoxNotify.Text = "通知";
+            this.textBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxLog.Location = new System.Drawing.Point(7, 20);
+            this.textBoxLog.Multiline = true;
+            this.textBoxLog.Name = "textBoxLog";
+            this.textBoxLog.ReadOnly = true;
+            this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBoxLog.Size = new System.Drawing.Size(316, 307);
+            this.textBoxLog.TabIndex = 0;
             // 
             // groupBoxControl
             // 
@@ -139,7 +149,7 @@ namespace HousingCheck
             this.groupBoxControl.Controls.Add(this.buttonSaveToFile);
             this.groupBoxControl.Controls.Add(this.buttonUploadOnce);
             this.groupBoxControl.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxControl.Location = new System.Drawing.Point(7, 159);
+            this.groupBoxControl.Location = new System.Drawing.Point(7, 266);
             this.groupBoxControl.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
             this.groupBoxControl.Name = "groupBoxControl";
             this.groupBoxControl.Size = new System.Drawing.Size(330, 49);
@@ -186,7 +196,7 @@ namespace HousingCheck
             this.groupBoxUpload.Controls.Add(this.textBoxUpload);
             this.groupBoxUpload.Controls.Add(this.checkBoxUpload);
             this.groupBoxUpload.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxUpload.Location = new System.Drawing.Point(7, 51);
+            this.groupBoxUpload.Location = new System.Drawing.Point(7, 158);
             this.groupBoxUpload.Margin = new System.Windows.Forms.Padding(7, 6, 7, 12);
             this.groupBoxUpload.Name = "groupBoxUpload";
             this.groupBoxUpload.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
@@ -288,28 +298,131 @@ namespace HousingCheck
             this.checkBoxUpload.UseVisualStyleBackColor = true;
             this.checkBoxUpload.CheckedChanged += new System.EventHandler(this.checkBoxUpload_CheckedChanged);
             // 
-            // groupBoxLog
+            // groupBoxNotify
             // 
-            this.groupBoxLog.Controls.Add(this.textBoxLog);
-            this.groupBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBoxLog.Location = new System.Drawing.Point(7, 208);
-            this.groupBoxLog.Name = "groupBoxLog";
-            this.groupBoxLog.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
-            this.groupBoxLog.Size = new System.Drawing.Size(330, 440);
-            this.groupBoxLog.TabIndex = 12;
-            this.groupBoxLog.TabStop = false;
-            this.groupBoxLog.Text = "日志";
+            this.groupBoxNotify.Controls.Add(this.groupBoxNotifyCheck);
+            this.groupBoxNotify.Controls.Add(this.groupBoxNotifyHouse);
+            this.groupBoxNotify.Controls.Add(this.checkBoxNotification);
+            this.groupBoxNotify.Controls.Add(this.checkboxTTS);
+            this.groupBoxNotify.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxNotify.Location = new System.Drawing.Point(7, 6);
+            this.groupBoxNotify.Name = "groupBoxNotify";
+            this.groupBoxNotify.Size = new System.Drawing.Size(330, 152);
+            this.groupBoxNotify.TabIndex = 9;
+            this.groupBoxNotify.TabStop = false;
+            this.groupBoxNotify.Text = "通知设置";
             // 
-            // textBoxLog
+            // groupBoxNotifyCheck
             // 
-            this.textBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBoxLog.Location = new System.Drawing.Point(7, 20);
-            this.textBoxLog.Multiline = true;
-            this.textBoxLog.Name = "textBoxLog";
-            this.textBoxLog.ReadOnly = true;
-            this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBoxLog.Size = new System.Drawing.Size(316, 414);
-            this.textBoxLog.TabIndex = 0;
+            this.groupBoxNotifyCheck.Controls.Add(this.buttonNotifyCheckTest);
+            this.groupBoxNotifyCheck.Controls.Add(this.numericUpDownNotifyCheck);
+            this.groupBoxNotifyCheck.Controls.Add(this.label5);
+            this.groupBoxNotifyCheck.Controls.Add(this.checkBoxNotifyCheck);
+            this.groupBoxNotifyCheck.Location = new System.Drawing.Point(11, 95);
+            this.groupBoxNotifyCheck.Name = "groupBoxNotifyCheck";
+            this.groupBoxNotifyCheck.Size = new System.Drawing.Size(311, 46);
+            this.groupBoxNotifyCheck.TabIndex = 4;
+            this.groupBoxNotifyCheck.TabStop = false;
+            this.groupBoxNotifyCheck.Text = "查房提醒";
+            // 
+            // buttonNotifyCheckTest
+            // 
+            this.buttonNotifyCheckTest.Location = new System.Drawing.Point(243, 16);
+            this.buttonNotifyCheckTest.Name = "buttonNotifyCheckTest";
+            this.buttonNotifyCheckTest.Size = new System.Drawing.Size(62, 23);
+            this.buttonNotifyCheckTest.TabIndex = 4;
+            this.buttonNotifyCheckTest.Text = "测试";
+            this.buttonNotifyCheckTest.UseVisualStyleBackColor = true;
+            // 
+            // numericUpDownNotifyCheck
+            // 
+            this.numericUpDownNotifyCheck.Location = new System.Drawing.Point(177, 18);
+            this.numericUpDownNotifyCheck.Maximum = new decimal(new int[] {
+            300,
+            0,
+            0,
+            0});
+            this.numericUpDownNotifyCheck.Name = "numericUpDownNotifyCheck";
+            this.numericUpDownNotifyCheck.Size = new System.Drawing.Size(43, 21);
+            this.numericUpDownNotifyCheck.TabIndex = 3;
+            this.numericUpDownNotifyCheck.Value = new decimal(new int[] {
+            120,
+            0,
+            0,
+            0});
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(89, 22);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(89, 12);
+            this.label5.TabIndex = 1;
+            this.label5.Text = "提前时间 (s)：";
+            // 
+            // checkBoxNotifyCheck
+            // 
+            this.checkBoxNotifyCheck.AutoSize = true;
+            this.checkBoxNotifyCheck.Location = new System.Drawing.Point(11, 21);
+            this.checkBoxNotifyCheck.Name = "checkBoxNotifyCheck";
+            this.checkBoxNotifyCheck.Size = new System.Drawing.Size(72, 16);
+            this.checkBoxNotifyCheck.TabIndex = 0;
+            this.checkBoxNotifyCheck.Text = "整点提醒";
+            this.checkBoxNotifyCheck.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxNotifyHouse
+            // 
+            this.groupBoxNotifyHouse.Controls.Add(this.checkBoxNotifyML);
+            this.groupBoxNotifyHouse.Controls.Add(this.checkBoxNotifyS);
+            this.groupBoxNotifyHouse.Controls.Add(this.buttonNotifyTest);
+            this.groupBoxNotifyHouse.Location = new System.Drawing.Point(11, 43);
+            this.groupBoxNotifyHouse.Name = "groupBoxNotifyHouse";
+            this.groupBoxNotifyHouse.Size = new System.Drawing.Size(311, 46);
+            this.groupBoxNotifyHouse.TabIndex = 3;
+            this.groupBoxNotifyHouse.TabStop = false;
+            this.groupBoxNotifyHouse.Text = "空房通知";
+            // 
+            // checkBoxNotifyML
+            // 
+            this.checkBoxNotifyML.AutoSize = true;
+            this.checkBoxNotifyML.Checked = true;
+            this.checkBoxNotifyML.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxNotifyML.Enabled = false;
+            this.checkBoxNotifyML.Location = new System.Drawing.Point(64, 20);
+            this.checkBoxNotifyML.Name = "checkBoxNotifyML";
+            this.checkBoxNotifyML.Size = new System.Drawing.Size(54, 16);
+            this.checkBoxNotifyML.TabIndex = 5;
+            this.checkBoxNotifyML.Text = "M/L房";
+            this.checkBoxNotifyML.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxNotifyS
+            // 
+            this.checkBoxNotifyS.AutoSize = true;
+            this.checkBoxNotifyS.Location = new System.Drawing.Point(11, 20);
+            this.checkBoxNotifyS.Name = "checkBoxNotifyS";
+            this.checkBoxNotifyS.Size = new System.Drawing.Size(42, 16);
+            this.checkBoxNotifyS.TabIndex = 4;
+            this.checkBoxNotifyS.Text = "S房";
+            this.checkBoxNotifyS.UseVisualStyleBackColor = true;
+            // 
+            // buttonNotifyTest
+            // 
+            this.buttonNotifyTest.Location = new System.Drawing.Point(243, 16);
+            this.buttonNotifyTest.Name = "buttonNotifyTest";
+            this.buttonNotifyTest.Size = new System.Drawing.Size(62, 23);
+            this.buttonNotifyTest.TabIndex = 3;
+            this.buttonNotifyTest.Text = "测试";
+            this.buttonNotifyTest.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxNotification
+            // 
+            this.checkBoxNotification.AutoSize = true;
+            this.checkBoxNotification.Location = new System.Drawing.Point(88, 20);
+            this.checkBoxNotification.Name = "checkBoxNotification";
+            this.checkBoxNotification.Size = new System.Drawing.Size(120, 16);
+            this.checkBoxNotification.TabIndex = 1;
+            this.checkBoxNotification.Text = "弹出通知 (Win8+)";
+            this.checkBoxNotification.UseVisualStyleBackColor = true;
             // 
             // checkboxTTS
             // 
@@ -321,24 +434,16 @@ namespace HousingCheck
             this.checkboxTTS.Text = "语音播报";
             this.checkboxTTS.UseVisualStyleBackColor = true;
             // 
-            // checkBoxNotification
+            // panel2
             // 
-            this.checkBoxNotification.AutoSize = true;
-            this.checkBoxNotification.Location = new System.Drawing.Point(88, 20);
-            this.checkBoxNotification.Name = "checkBoxNotification";
-            this.checkBoxNotification.Size = new System.Drawing.Size(72, 16);
-            this.checkBoxNotification.TabIndex = 1;
-            this.checkBoxNotification.Text = "弹出通知";
-            this.checkBoxNotification.UseVisualStyleBackColor = true;
-            // 
-            // buttonNotifyTest
-            // 
-            this.buttonNotifyTest.Location = new System.Drawing.Point(260, 16);
-            this.buttonNotifyTest.Name = "buttonNotifyTest";
-            this.buttonNotifyTest.Size = new System.Drawing.Size(62, 23);
-            this.buttonNotifyTest.TabIndex = 2;
-            this.buttonNotifyTest.Text = "测试";
-            this.buttonNotifyTest.UseVisualStyleBackColor = true;
+            this.panel2.Controls.Add(this.groupBoxTable);
+            this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel2.Location = new System.Drawing.Point(0, 0);
+            this.panel2.Margin = new System.Windows.Forms.Padding(2);
+            this.panel2.Name = "panel2";
+            this.panel2.Padding = new System.Windows.Forms.Padding(14, 6, 7, 7);
+            this.panel2.Size = new System.Drawing.Size(589, 655);
+            this.panel2.TabIndex = 5;
             // 
             // PluginControl
             // 
@@ -354,14 +459,19 @@ namespace HousingCheck
             ((System.ComponentModel.ISupportInitialize)(this.housingCheckBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginControlBindingSource)).EndInit();
             this.panel1.ResumeLayout(false);
-            this.panel2.ResumeLayout(false);
-            this.groupBoxNotify.ResumeLayout(false);
-            this.groupBoxNotify.PerformLayout();
+            this.groupBoxLog.ResumeLayout(false);
+            this.groupBoxLog.PerformLayout();
             this.groupBoxControl.ResumeLayout(false);
             this.groupBoxUpload.ResumeLayout(false);
             this.groupBoxUpload.PerformLayout();
-            this.groupBoxLog.ResumeLayout(false);
-            this.groupBoxLog.PerformLayout();
+            this.groupBoxNotify.ResumeLayout(false);
+            this.groupBoxNotify.PerformLayout();
+            this.groupBoxNotifyCheck.ResumeLayout(false);
+            this.groupBoxNotifyCheck.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).EndInit();
+            this.groupBoxNotifyHouse.ResumeLayout(false);
+            this.groupBoxNotifyHouse.PerformLayout();
+            this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -391,8 +501,16 @@ namespace HousingCheck
         public System.Windows.Forms.TextBox textBoxUpload;
         private System.Windows.Forms.CheckBox checkBoxUpload;
         private System.Windows.Forms.GroupBox groupBoxNotify;
-        public System.Windows.Forms.CheckBox checkBoxNotification;
-        public System.Windows.Forms.CheckBox checkboxTTS;
+        private System.Windows.Forms.CheckBox checkBoxNotification;
+        private System.Windows.Forms.CheckBox checkboxTTS;
+        private System.Windows.Forms.GroupBox groupBoxNotifyCheck;
+        public System.Windows.Forms.Button buttonNotifyCheckTest;
+        private System.Windows.Forms.NumericUpDown numericUpDownNotifyCheck;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.CheckBox checkBoxNotifyCheck;
+        private System.Windows.Forms.GroupBox groupBoxNotifyHouse;
+        private System.Windows.Forms.CheckBox checkBoxNotifyML;
+        private System.Windows.Forms.CheckBox checkBoxNotifyS;
         public System.Windows.Forms.Button buttonNotifyTest;
     }
 }

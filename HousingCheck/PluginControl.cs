@@ -53,6 +53,36 @@ namespace HousingCheck
             }
         }
 
+        /// <summary>
+        /// 是否启用TTS通知
+        /// </summary>
+        public bool EnableTTS => checkboxTTS.Checked;
+        /// <summary>
+        /// 是否启用操作系统通知
+        /// </summary>
+        public bool EnableNotification => checkBoxNotification.Checked;
+        /// <summary>
+        /// 启用S房通知提醒
+        /// </summary>
+        public bool EnableNotifyHouseS => checkBoxNotifyS.Checked;
+        /// <summary>
+        /// 启用ML房通知提醒
+        /// </summary>
+        /// <remarks>
+        /// 为防止错过提示，此选项永远为True
+        /// </remarks>
+        public bool EnableNotifyHouseML => true;
+
+        /// <summary>
+        /// 启用整点查房提醒
+        /// </summary>
+        public bool EnableNotifyCheck => checkBoxNotifyCheck.Checked;
+
+        /// <summary>
+        /// 查房提醒提前时间（秒）
+        /// </summary>
+        public int CheckNotifyAheadTime => (int)numericUpDownNotifyCheck.Value;
+
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\HousingCheck.config.xml");
         public bool upload;
         public Dictionary<string, ApiVersion> apiVersionList = new Dictionary<string, ApiVersion>();
@@ -101,6 +131,10 @@ namespace HousingCheck
                     checkBoxUploadSnapshot.Checked = bool.Parse(head?.SelectSingleNode("UploadSnapshot")?.InnerText ?? "true");
                     checkboxTTS.Checked = bool.Parse(head?.SelectSingleNode("TTSNotify")?.InnerText ?? "false");
                     checkBoxNotification.Checked = bool.Parse(head?.SelectSingleNode("ShellNotify")?.InnerText ?? "false");
+                    checkBoxNotifyML.Checked = true;
+                    checkBoxNotifyS.Checked = bool.Parse(head?.SelectSingleNode("NotifyHouseS")?.InnerText ?? "false");
+                    checkBoxNotifyCheck.Checked = bool.Parse(head?.SelectSingleNode("NotifyCheck")?.InnerText ?? "false");
+                    numericUpDownNotifyCheck.Value = int.Parse(head?.SelectSingleNode("NotifyCheckAhead")?.InnerText ?? "120");
                 }
                 catch (Exception)
                 {
@@ -123,6 +157,9 @@ namespace HousingCheck
             xWriter.WriteElementString("UploadSnapshot", checkBoxUploadSnapshot.Checked.ToString());
             xWriter.WriteElementString("TTSNotify", checkboxTTS.Checked.ToString());
             xWriter.WriteElementString("ShellNotify", checkBoxNotification.Checked.ToString());
+            xWriter.WriteElementString("NotifyHouseS", checkBoxNotifyS.Checked.ToString());
+            xWriter.WriteElementString("NotifyCheck", checkBoxNotifyCheck.Checked.ToString());
+            xWriter.WriteElementString("NotifyCheckAhead", numericUpDownNotifyCheck.Value.ToString());
             xWriter.WriteEndElement();              // </Config>
             xWriter.WriteEndDocument();             // Tie up loose ends (shouldn't be any)
             xWriter.Flush();                        // Flush the file buffer to disk

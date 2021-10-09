@@ -101,6 +101,11 @@ namespace HousingCheck
         private BackgroundWorker LogQueueWorker;
 
         /// <summary>
+        /// 定时任务Worker
+        /// </summary>
+        private BackgroundWorker TickWorker;
+
+        /// <summary>
         /// 状态信息
         /// </summary>
         Label statusLabel;
@@ -133,6 +138,7 @@ namespace HousingCheck
                 subs.GetType().GetEvent("NetworkReceived").RemoveEventHandler(subs, networkReceivedDelegate);
                 AutoSaveThread.CancelAsync();
                 LogQueueWorker.CancelAsync();
+                TickWorker.CancelAsync();
                 control.SaveSettings();
                 SaveHousingList();
                 statusLabel.Text = "Exit :|";
@@ -180,15 +186,25 @@ namespace HousingCheck
             LogQueueWorker.DoWork += RunLogQueueWorker;
             LogQueueWorker.RunWorkerAsync();
 
+            TickWorker = new BackgroundWorker{ WorkerSupportsCancellation = true };
+            TickWorker.DoWork += TickDoWorker;
+            TickWorker.RunWorkerAsync();
+
             statusLabel.Text = "Working :D";
             control.LoadSettings();
             control.buttonUploadOnce.Click += ButtonUploadOnce_Click;
             control.buttonCopyToClipboard.Click += ButtonCopyToClipboard_Click;
             control.buttonSaveToFile.Click += ButtonSaveToFile_Click;
             control.buttonNotifyTest.Click += ButtonNotifyTest_Click;
+            control.buttonNotifyCheckTest.Click += ButtonNotifyCheckTest_Click;
             PrepareDir();
             //恢复上次列表
             LoadHousingList();
+        }
+
+        private void ButtonNotifyCheckTest_Click(object sender, EventArgs e)
+        {
+            NotifyCheckHouseAsnyc();
         }
 
         private void ButtonNotifyTest_Click(object sender, EventArgs e)
@@ -203,39 +219,42 @@ namespace HousingCheck
 
         void NotifyEmptyHouse(HousingOnSaleItem onSaleItem, bool exists)
         {
-            if (onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L)
+            if (onSaleItem.Size == HouseSize.S && !control.EnableNotifyHouseS)
+                return;
+
+            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !control.EnableNotifyHouseML) 
+                return;
+
+            bool fallback = true;
+            if (control.EnableTTS)
             {
-                bool fallback = true;
-                if (control.checkboxTTS.Checked)
-                {
-                    ActGlobals.oFormActMain.TTS(
-                        string.Format("{0}{1}区{2}号{3}房",
-                            HousingItem.GetHouseAreaShortStr(onSaleItem.Area),
-                            onSaleItem.DisplaySlot,
-                            onSaleItem.DisplayId,
-                            onSaleItem.SizeStr
-                        )
+                ActGlobals.oFormActMain.TTS(
+                    string.Format("{0}{1}区{2}号{3}房",
+                        HousingItem.GetHouseAreaShortStr(onSaleItem.Area),
+                        onSaleItem.DisplaySlot,
+                        onSaleItem.DisplayId,
+                        onSaleItem.SizeStr
+                    )
+                );
+                fallback = false;
+            } 
+            if (control.EnableNotification)
+            {
+                var title = string.Format("{0} 第{1}区 {2}号 {3}房",
+                        onSaleItem.AreaStr,
+                        onSaleItem.DisplaySlot,
+                        onSaleItem.DisplayId,
+                        onSaleItem.SizeStr
                     );
-                    fallback = false;
-                } 
-                if (control.checkBoxNotification.Checked)
-                {
-                    var title = string.Format("{0} 第{1}区 {2}号 {3}房",
-                            onSaleItem.AreaStr,
-                            onSaleItem.DisplaySlot,
-                            onSaleItem.DisplayId,
-                            onSaleItem.SizeStr
-                        );
-                    new ToastContentBuilder()
-                        .AddText("新空房")
-                        .AddText(title)
-                        .Show();
-                    fallback = false;
-                }
-                if (fallback)
-                {
-                    PlayAlert();
-                }
+                new ToastContentBuilder()
+                    .AddText("新空房")
+                    .AddText(title)
+                    .Show();
+                fallback = false;
+            }
+            if (fallback)
+            {
+                PlayAlert();
             }
         }
 
@@ -251,7 +270,7 @@ namespace HousingCheck
         {
             var time = (DateTime.Now).ToString("HH:mm:ss");
             var text = $"[{time}] [{type}] {message.Trim()}";
-            control.Invoke(new Action<string>((msg) => {
+            control.BeginInvoke(new Action<string>((msg) => {
                 control.textBoxLog.AppendText(text + Environment.NewLine);
                 control.textBoxLog.SelectionStart = control.textBoxLog.TextLength;
                 control.textBoxLog.ScrollToCaret();
@@ -508,7 +527,7 @@ namespace HousingCheck
         {
             while (true)
             {
-                if (AutoSaveThread.CancellationPending)
+                if (LogQueueWorker.CancellationPending)
                 {
                     break;
                 }
@@ -589,6 +608,57 @@ namespace HousingCheck
                     }
                 }
                 Thread.Sleep(500);
+            }
+        }
+
+        private DateTime GetNextNotifyTime()
+        {
+            var nT = DateTime.Now.AddHours(1);
+            return new DateTime(nT.Year, nT.Month, nT.Day, nT.Hour, 0, 0);
+        }
+
+        /// <summary>
+        /// 弹出查房提示
+        /// </summary>
+        private void NotifyCheckHouse()
+        {
+            if (control.EnableTTS)
+            {
+                ActGlobals.oFormActMain.TTS("查房提醒：该查房了");
+            }
+            if (control.EnableNotification)
+            {
+                new ToastContentBuilder()
+                    .AddText("查房提醒")
+                    .AddText("该查房了")
+                    .Show();
+            }
+        }
+
+        /// <summary>
+        /// 弹出查房提示
+        /// </summary>
+        private void NotifyCheckHouseAsnyc()
+        {
+            new Action(NotifyCheckHouse).Invoke();
+        }
+
+        private void TickDoWorker(object sender, DoWorkEventArgs e)
+        {
+            DateTime nextNotify = GetNextNotifyTime();
+            DateTime lastNotify = DateTime.Now.AddSeconds(-1);
+            while(!AutoSaveThread.CancellationPending) 
+            {
+                if (DateTime.Now > nextNotify.AddSeconds(-control.CheckNotifyAheadTime))
+                {
+                    if (lastNotify != nextNotify && control.EnableNotifyCheck)
+                    {
+                        NotifyCheckHouseAsnyc();
+                        lastNotify = nextNotify;
+                    }
+                    nextNotify = GetNextNotifyTime();
+                }
+                Thread.Sleep(1000);
             }
         }
 
