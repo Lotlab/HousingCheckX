@@ -276,11 +276,11 @@ namespace HousingCheck
                 control.textBoxLog.ScrollToCaret();
             }), text);
 
-            text = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
+            var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
             //ActGlobals.oFormActMain.ParseRawLogLine(true, DateTime.Now, $"{text}");
             if (important)
             {
-                LogQueue.Add((DateTime.Now, text));
+                LogQueue.Add((DateTime.Now, logText));
             }
         }
 
