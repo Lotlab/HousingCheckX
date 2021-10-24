@@ -38,7 +38,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Advanced Combat Tracker">
-      <HintPath>E:\Games\ACT\Advanced Combat Tracker.dll</HintPath>
+      <HintPath>..\..\..\..\SDK\ACT\ACTv3\Advanced Combat Tracker.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FFXIV_ACT_Plugin">
@@ -101,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HousingCheck.cs" />
+    <Compile Include="HousingLandInfoSign.cs" />
     <Compile Include="HousingOnSaleItem.cs" />
     <Compile Include="HousingItem.cs" />
     <Compile Include="HousingSlotSnapshot.cs" />

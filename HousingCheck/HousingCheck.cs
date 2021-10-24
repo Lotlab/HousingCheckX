@@ -33,6 +33,7 @@ namespace HousingCheck
     public class HousingCheck : IActPluginV1
     {
         public const int OPCODE = 585;
+        public const int OPCODE_LAND_INFO = 0x136;
         /// <summary>
         /// 房屋列表，用于和控件双向绑定
         /// </summary>
@@ -71,6 +72,11 @@ namespace HousingCheck
         bool SnapshotUpdated = false;
 
         /// <summary>
+        /// 房屋详细信息自上次上报以来有更新
+        /// </summary>
+        bool LandInfoUpdated = false;
+
+        /// <summary>
         /// 房区快照
         /// </summary>
         HousingSnapshotStorage SnapshotStorage = new HousingSnapshotStorage();
@@ -79,6 +85,11 @@ namespace HousingCheck
         /// 进行房区快照上报用的存储
         /// </summary>
         ConcurrentDictionary<Tuple<HouseArea, int>, HousingSlotSnapshot> WillUploadSnapshot = new ConcurrentDictionary<Tuple<HouseArea, int>, HousingSlotSnapshot>();
+
+        /// <summary>
+        /// 房屋详细信息存储
+        /// </summary>
+        LandInfoSignStorage LandInfoSignStorage = new LandInfoSignStorage();
         
         /// <summary>
         /// 用户上次操作的时间
@@ -299,13 +310,25 @@ namespace HousingCheck
         void NetworkReceived(string connection, long epoch, byte[] message)
         {
             var opcode = BitConverter.ToUInt16(message, 18);
-            //if (message.Length == 2440) Log("Debug", "opcode=" + opcode);
-            if (opcode != OPCODE || message.Length != 2440) return;
+            if (message.Length == 2440)
+            {
+                if (opcode == OPCODE)
+                {
+                    WardInfoParser(message);
+                } 
+                else
+                {
+                    //Log("Debug", "opcode=" + opcode);
+                }
+            }
 
-            NetworkReceivedHandler(message);
+            if (opcode == OPCODE_LAND_INFO)
+            {
+                LandInfoParser(message);
+            }
         }
 
-        void NetworkReceivedHandler(byte[] message)
+        void WardInfoParser(byte[] message)
         {
             HousingSlotSnapshot snapshot;
             List<HousingOnSaleItem> updatedHousingList = new List<HousingOnSaleItem>();
@@ -383,6 +406,20 @@ namespace HousingCheck
             }
         }
 
+        void LandInfoParser(byte[] message)
+        {
+            try
+            {
+                var info = new HousingLandInfoSign(message);
+                LandInfoSignStorage.Add(info);
+                LandInfoUpdated = true;
+            } 
+            catch (Exception e)
+            {
+                Log("Error", e, "查询房屋信息出错：");
+            }
+        }
+
         private void ButtonUploadOnce_Click(object sender, EventArgs e)
         {
             Log("Info", $"准备上报");
@@ -441,14 +478,25 @@ namespace HousingCheck
         private void ButtonSaveToFile_Click(object sender, EventArgs e)
         {
             PrepareDir();
-            string fileName = $"HousingCheck-{DateTime.Now.ToString("u").Replace(":", "").Replace(" ", "").Replace("-", "")}.csv";
-            string savePath = Path.Combine(new string[] { Environment.CurrentDirectory, "AppData", "HousingCheck", "snapshots", fileName });
+            string time = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string snapshotFilename = $"HousingCheck-{time}-Snapshot.csv";
+            string landInfoFilename = $"HousingCheck-{time}-LandInfo.csv";
+            string saveDir = Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck", "snapshots");
 
-            StreamWriter writer = new StreamWriter(savePath, false, Encoding.UTF8);
-            SnapshotStorage.SaveCsv(writer);
-            writer.Close();
-            Log("Info", $"已保存到{savePath}");
-            //Log("Debug", fileName);
+            using (var writer = new StreamWriter(Path.Combine(saveDir, snapshotFilename), false, Encoding.UTF8))
+            {
+                SnapshotStorage.SaveCsv(writer);
+            }
+
+            if (LandInfoSignStorage.Count > 0)
+            {
+                using (var writer = new StreamWriter(Path.Combine(saveDir, landInfoFilename), false, Encoding.UTF8))
+                {
+                    LandInfoSignStorage.WriteCSV(writer);
+                }
+            }
+
+            Log("Info", $"已保存到 {saveDir} 文件夹");
         }
 
         private string ListToString()
@@ -574,10 +622,15 @@ namespace HousingCheck
                 {
                     UploadOnSaleList(apiVersion);
                     HousingListUpdated = false;
+                    LandInfoUpdated = false;
                      // 手动上传在任何情况下都应当上传存储的数据
-                    if (apiVersion == ApiVersion.V2 && uploadSnapshot && snapshotCount > 0)
+                    if (apiVersion == ApiVersion.V2 && uploadSnapshot)
                     {
-                        UploadSnapshot();
+                        if (snapshotCount > 0)
+                            UploadSnapshot();
+ 
+                        if (LandInfoSignStorage.UploadCount > 0) 
+                            UploadLandInfoSnapshot();
                     }
                     ManualUpload = false;
                 }
@@ -605,6 +658,11 @@ namespace HousingCheck
                             //上传快照
                             UploadSnapshot();
                         }
+                    }
+
+                    if (autoUpload && apiVersion == ApiVersion.V2 && uploadSnapshot && LandInfoUpdated)
+                    {
+                        UploadLandInfoSnapshot();
                     }
                 }
                 Thread.Sleep(500);
@@ -647,7 +705,7 @@ namespace HousingCheck
         {
             DateTime nextNotify = GetNextNotifyTime();
             DateTime lastNotify = DateTime.Now.AddSeconds(-1);
-            while(!AutoSaveThread.CancellationPending) 
+            while(!TickWorker.CancellationPending) 
             {
                 if (DateTime.Now > nextNotify.AddSeconds(-control.CheckNotifyAheadTime))
                 {
@@ -683,6 +741,11 @@ namespace HousingCheck
                     url = control.UploadUrl.TrimEnd('/') + "/" + type;
                     break;
             }
+
+            // 调试用，可以解决部分网页服务器不支持此功能的问题
+            // var servicePoint = ServicePointManager.FindServicePoint(new Uri(url));
+            // servicePoint.Expect100Continue = false;
+
             try
             {
                 var response = wb.UploadData(url, "POST",
@@ -785,6 +848,32 @@ namespace HousingCheck
                 Log("Error", ex, "房区快照上报出错：");
             }
             //Log("Info", $"上报消息给 {post_url}");
+        }
+
+        private void UploadLandInfoSnapshot()
+        {
+            try
+            {
+                var objs = LandInfoSignStorage.ToJsonObj();
+                LandInfoUpdated = false;
+                string json = JsonConvert.SerializeObject(objs);
+                Log("Info", "正在上传房屋详细信息");
+                bool res = UploadData("detail", json);
+                if (res)
+                {
+                    Log("Info", "房屋详细信息上报成功");
+                    // 标记过时数据以防止重复上报
+                    LandInfoSignStorage.MarkOutdated(DateTime.Now);
+                }
+                else
+                {
+                    Thread.Sleep(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Error", ex, "房屋详细信息上报出错：");
+            }
         }
     }
 }

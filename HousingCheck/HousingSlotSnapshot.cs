@@ -17,12 +17,106 @@ namespace HousingCheck
         public HousingItemJSONObject[] houses;
     }
 
+    public class LandIdent : IEquatable<LandIdent>, IComparable<LandIdent>
+    {
+        /// <summary>
+        /// 服务器ID
+        /// worldId
+        /// </summary>
+        public int ServerID { get; }
+        /// <summary>
+        /// 房屋区域
+        /// territoryTypeId
+        /// </summary>
+        public HouseArea Area { get; } = HouseArea.UNKNOW;
+        /// <summary>
+        /// 小分区
+        /// wardNum，从0开始
+        /// </summary>
+        public int Slot { get; }
+        /// <summary>
+        /// 房屋ID
+        /// landID，从0开始
+        /// </summary>
+        public int LandID { get; } = 0;
+
+        public LandIdent(byte[] message)
+        {
+            LandID = BitConverter.ToUInt16(message, 0);
+            Slot = BitConverter.ToUInt16(message, 2);
+            var areaID = BitConverter.ToUInt16(message, 4);
+            ServerID = BitConverter.ToUInt16(message, 6);
+
+            switch (areaID)
+            {
+                case 0x153:
+                    Area = HouseArea.海雾村;
+                    break;
+                case 0x154:
+                    Area = HouseArea.薰衣草苗圃;
+                    break;
+                case 0x155:
+                    Area = HouseArea.高脚孤丘;
+                    break;
+                case 0x281:
+                    Area = HouseArea.白银乡;
+                    break;
+                case 0x376: // ID 暂定
+                    Area = HouseArea.天穹街;
+                    break;
+                default:
+                    break;
+            }
+        }
+    
+        public LandIdent(int server, HouseArea area, int slot, int land = 0)
+        {
+            ServerID = server;
+            Area = area;
+            Slot = slot;
+            LandID = land;
+        }
+
+        bool IEquatable<LandIdent>.Equals(LandIdent other)
+        {
+            if (ReferenceEquals(other, null))
+            {
+                return false;
+            }
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+            return ServerID == other.ServerID && Area == other.Area && Slot == other.Slot && LandID == other.LandID;
+        }
+
+        public override int GetHashCode()
+        {
+            return (ServerID << 6) + ((int)Area << 4) + (Slot << 2) + LandID;
+        }
+
+        int IComparable<LandIdent>.CompareTo(LandIdent other)
+        {
+            int tmp = ServerID - other.ServerID;
+            if (tmp != 0) return Math.Sign(tmp);
+
+            tmp = Area - other.Area;
+            if (tmp != 0) return Math.Sign(tmp);
+
+            tmp = Slot - other.Slot;
+            if (tmp != 0) return Math.Sign(tmp);
+
+            return Math.Sign(LandID - other.LandID);
+        }
+    }
+
     public class HousingSlotSnapshot
     {
-        public DateTime Time;
-        public int ServerId;
-        public HouseArea Area = HouseArea.UNKNOW;
-        public int Slot;
+        public DateTime Time { get; }
+        public int ServerId => landIdent.ServerID;
+        public HouseArea Area => landIdent.Area;
+        public int Slot => landIdent.Slot;
+        public LandIdent landIdent { get; }
         public SortedList<int, HousingItem> HouseList = new SortedList<int, HousingItem>();
 
         /// <summary>
@@ -35,23 +129,7 @@ namespace HousingCheck
             Time = DateTimeOffset.FromUnixTimeSeconds(BitConverter.ToInt32(time, 0)).LocalDateTime;
             var dataList = message.SubArray(32, message.Length - 32);
             var dataHeader = dataList.SubArray(0, 8);
-            switch (dataHeader[4])
-            {
-                case 0x53:
-                    Area = HouseArea.海雾村;
-                    break;
-                case 0x54:
-                    Area = HouseArea.薰衣草苗圃;
-                    break;
-                case 0x55:
-                    Area = HouseArea.高脚孤丘;
-                    break;
-                case 0x81:
-                    Area = HouseArea.白银乡;
-                    break;
-            }
-            Slot = dataHeader[2];
-            ServerId = BitConverter.ToUInt16(dataHeader, 6);
+            landIdent = new LandIdent(dataHeader);
 
             for (int i = 8; i < dataList.Length; i += 40)
             {
