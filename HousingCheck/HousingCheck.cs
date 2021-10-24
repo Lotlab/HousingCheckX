@@ -413,6 +413,8 @@ namespace HousingCheck
                 var info = new HousingLandInfoSign(message);
                 LandInfoSignStorage.Add(info);
                 LandInfoUpdated = true;
+
+                LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
             } 
             catch (Exception e)
             {
@@ -720,9 +722,19 @@ namespace HousingCheck
             }
         }
 
+        private class CustomWebClient : WebClient
+        {
+            protected override WebRequest GetWebRequest(Uri uri)
+            {
+                WebRequest w = base.GetWebRequest(uri);
+                w.Timeout = 20 * 1000; // 20s
+                return w;
+            }
+        }
+
         public bool UploadData(string type, string postContent, string mime = "application/json")
         {
-            var wb = new WebClient();
+            var wb = new CustomWebClient();
             var token = control.UploadToken.Trim();
             if (token != "")
             {
