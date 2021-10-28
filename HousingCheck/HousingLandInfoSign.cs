@@ -71,6 +71,34 @@ namespace HousingCheck
             offset += 7;
             Tag = msgBody.SubArray(offset, 3);
         }
+
+        /// <summary>
+        /// 创建一个空房
+        /// </summary>
+        /// <param name="serverID"></param>
+        /// <param name="area"></param>
+        /// <param name="slot"></param>
+        /// <param name="id"></param>
+        /// <param name="time"></param>
+        /// <param name="size"></param>
+        public HousingLandInfoSign(int serverID, HouseArea area, int slot, int id , DateTime time, HouseSize size) : 
+            this(new LandIdent(serverID, area, slot, id), time, size)
+        {
+        }
+
+        /// <summary>
+        /// 创建一个空房
+        /// </summary>
+        /// <param name="land"></param>
+        /// <param name="time"></param>
+        public HousingLandInfoSign(LandIdent land, DateTime time, HouseSize size)
+        {
+            LandIdent = land;
+            Time = time;
+            HouseSize = size;
+            OwnerID = 0;
+            HouseType = HouseOwnerType.EMPTY;
+        }
     }
 
     public class LandInfoSignBrief

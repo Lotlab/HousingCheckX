@@ -384,6 +384,11 @@ namespace HousingCheck
                         {
                             Log("Info", "重复土地，已更新。");
                         }
+
+                        var signInfo = new HousingLandInfoSign(snapshot.ServerId, house.Area, house.Slot, house.Id, snapshot.Time, house.Size);
+                        LandInfoSignStorage.Add(signInfo);
+                        LandInfoUpdated = true;
+
                     } else if (isExists) {
                         removeList.Add(onSaleItem);
                     }
