@@ -34,13 +34,11 @@ namespace HousingCheck
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.housingCheckBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.pluginControlBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.panel2 = new System.Windows.Forms.Panel();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.groupBoxLog = new System.Windows.Forms.GroupBox();
-            this.textBoxLog = new System.Windows.Forms.TextBox();
-            this.groupBoxControl = new System.Windows.Forms.GroupBox();
-            this.buttonCopyToClipboard = new System.Windows.Forms.Button();
-            this.buttonSaveToFile = new System.Windows.Forms.Button();
-            this.buttonUploadOnce = new System.Windows.Forms.Button();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.TabLog = new System.Windows.Forms.TabPage();
+            this.TabSetting = new System.Windows.Forms.TabPage();
             this.groupBoxUpload = new System.Windows.Forms.GroupBox();
             this.selectApiVersion = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -63,20 +61,28 @@ namespace HousingCheck
             this.buttonNotifyTest = new System.Windows.Forms.Button();
             this.checkBoxNotification = new System.Windows.Forms.CheckBox();
             this.checkboxTTS = new System.Windows.Forms.CheckBox();
-            this.panel2 = new System.Windows.Forms.Panel();
+            this.groupBoxControl = new System.Windows.Forms.GroupBox();
+            this.buttonCopyToClipboard = new System.Windows.Forms.Button();
+            this.buttonSaveToFile = new System.Windows.Forms.Button();
+            this.buttonUploadOnce = new System.Windows.Forms.Button();
+            this.groupBoxLog = new System.Windows.Forms.GroupBox();
+            this.textBoxLog = new System.Windows.Forms.TextBox();
             this.groupBoxTable.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.housingCheckBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginControlBindingSource)).BeginInit();
+            this.panel2.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.groupBoxLog.SuspendLayout();
-            this.groupBoxControl.SuspendLayout();
+            this.tabControl1.SuspendLayout();
+            this.TabLog.SuspendLayout();
+            this.TabSetting.SuspendLayout();
             this.groupBoxUpload.SuspendLayout();
             this.groupBoxNotify.SuspendLayout();
             this.groupBoxNotifyCheck.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).BeginInit();
             this.groupBoxNotifyHouse.SuspendLayout();
-            this.panel2.SuspendLayout();
+            this.groupBoxControl.SuspendLayout();
+            this.groupBoxLog.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBoxTable
@@ -95,7 +101,7 @@ namespace HousingCheck
             // dataGridView1
             // 
             this.dataGridView1.AllowUserToAddRows = false;
-            this.dataGridView1.AllowUserToOrderColumns = true;
+            this.dataGridView1.AllowUserToResizeRows = false;
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -105,13 +111,22 @@ namespace HousingCheck
             this.dataGridView1.RowHeadersWidth = 50;
             this.dataGridView1.Size = new System.Drawing.Size(554, 616);
             this.dataGridView1.TabIndex = 0;
+            this.dataGridView1.VirtualMode = true;
+            // 
+            // panel2
+            // 
+            this.panel2.Controls.Add(this.groupBoxTable);
+            this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel2.Location = new System.Drawing.Point(0, 0);
+            this.panel2.Margin = new System.Windows.Forms.Padding(2);
+            this.panel2.Name = "panel2";
+            this.panel2.Padding = new System.Windows.Forms.Padding(14, 6, 7, 7);
+            this.panel2.Size = new System.Drawing.Size(589, 655);
+            this.panel2.TabIndex = 5;
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.groupBoxLog);
-            this.panel1.Controls.Add(this.groupBoxControl);
-            this.panel1.Controls.Add(this.groupBoxUpload);
-            this.panel1.Controls.Add(this.groupBoxNotify);
+            this.panel1.Controls.Add(this.tabControl1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Right;
             this.panel1.Location = new System.Drawing.Point(589, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(2);
@@ -120,69 +135,42 @@ namespace HousingCheck
             this.panel1.Size = new System.Drawing.Size(351, 655);
             this.panel1.TabIndex = 4;
             // 
-            // groupBoxLog
+            // tabControl1
             // 
-            this.groupBoxLog.Controls.Add(this.textBoxLog);
-            this.groupBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBoxLog.Location = new System.Drawing.Point(7, 315);
-            this.groupBoxLog.Name = "groupBoxLog";
-            this.groupBoxLog.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
-            this.groupBoxLog.Size = new System.Drawing.Size(330, 333);
-            this.groupBoxLog.TabIndex = 12;
-            this.groupBoxLog.TabStop = false;
-            this.groupBoxLog.Text = "日志";
+            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tabControl1.Controls.Add(this.TabLog);
+            this.tabControl1.Controls.Add(this.TabSetting);
+            this.tabControl1.Location = new System.Drawing.Point(0, 6);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(351, 646);
+            this.tabControl1.TabIndex = 14;
             // 
-            // textBoxLog
+            // TabLog
             // 
-            this.textBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBoxLog.Location = new System.Drawing.Point(7, 20);
-            this.textBoxLog.Multiline = true;
-            this.textBoxLog.Name = "textBoxLog";
-            this.textBoxLog.ReadOnly = true;
-            this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBoxLog.Size = new System.Drawing.Size(316, 307);
-            this.textBoxLog.TabIndex = 0;
+            this.TabLog.Controls.Add(this.groupBoxLog);
+            this.TabLog.Controls.Add(this.groupBoxControl);
+            this.TabLog.Location = new System.Drawing.Point(4, 22);
+            this.TabLog.Name = "TabLog";
+            this.TabLog.Padding = new System.Windows.Forms.Padding(3);
+            this.TabLog.Size = new System.Drawing.Size(343, 620);
+            this.TabLog.TabIndex = 0;
+            this.TabLog.Text = "日志";
+            this.TabLog.UseVisualStyleBackColor = true;
             // 
-            // groupBoxControl
+            // TabSetting
             // 
-            this.groupBoxControl.Controls.Add(this.buttonCopyToClipboard);
-            this.groupBoxControl.Controls.Add(this.buttonSaveToFile);
-            this.groupBoxControl.Controls.Add(this.buttonUploadOnce);
-            this.groupBoxControl.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxControl.Location = new System.Drawing.Point(7, 266);
-            this.groupBoxControl.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
-            this.groupBoxControl.Name = "groupBoxControl";
-            this.groupBoxControl.Size = new System.Drawing.Size(330, 49);
-            this.groupBoxControl.TabIndex = 11;
-            this.groupBoxControl.TabStop = false;
-            this.groupBoxControl.Text = "操作";
-            // 
-            // buttonCopyToClipboard
-            // 
-            this.buttonCopyToClipboard.Location = new System.Drawing.Point(224, 21);
-            this.buttonCopyToClipboard.Name = "buttonCopyToClipboard";
-            this.buttonCopyToClipboard.Size = new System.Drawing.Size(98, 23);
-            this.buttonCopyToClipboard.TabIndex = 0;
-            this.buttonCopyToClipboard.Text = "复制到剪贴板";
-            this.buttonCopyToClipboard.UseVisualStyleBackColor = true;
-            // 
-            // buttonSaveToFile
-            // 
-            this.buttonSaveToFile.Location = new System.Drawing.Point(117, 21);
-            this.buttonSaveToFile.Name = "buttonSaveToFile";
-            this.buttonSaveToFile.Size = new System.Drawing.Size(98, 23);
-            this.buttonSaveToFile.TabIndex = 0;
-            this.buttonSaveToFile.Text = "保存到文件";
-            this.buttonSaveToFile.UseVisualStyleBackColor = true;
-            // 
-            // buttonUploadOnce
-            // 
-            this.buttonUploadOnce.Location = new System.Drawing.Point(10, 21);
-            this.buttonUploadOnce.Name = "buttonUploadOnce";
-            this.buttonUploadOnce.Size = new System.Drawing.Size(98, 23);
-            this.buttonUploadOnce.TabIndex = 0;
-            this.buttonUploadOnce.Text = "手动上报一次";
-            this.buttonUploadOnce.UseVisualStyleBackColor = true;
+            this.TabSetting.Controls.Add(this.groupBoxUpload);
+            this.TabSetting.Controls.Add(this.groupBoxNotify);
+            this.TabSetting.Location = new System.Drawing.Point(4, 22);
+            this.TabSetting.Name = "TabSetting";
+            this.TabSetting.Padding = new System.Windows.Forms.Padding(3);
+            this.TabSetting.Size = new System.Drawing.Size(343, 620);
+            this.TabSetting.TabIndex = 1;
+            this.TabSetting.Text = "设置";
+            this.TabSetting.UseVisualStyleBackColor = true;
             // 
             // groupBoxUpload
             // 
@@ -196,12 +184,12 @@ namespace HousingCheck
             this.groupBoxUpload.Controls.Add(this.textBoxUpload);
             this.groupBoxUpload.Controls.Add(this.checkBoxUpload);
             this.groupBoxUpload.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxUpload.Location = new System.Drawing.Point(7, 158);
+            this.groupBoxUpload.Location = new System.Drawing.Point(3, 155);
             this.groupBoxUpload.Margin = new System.Windows.Forms.Padding(7, 6, 7, 12);
             this.groupBoxUpload.Name = "groupBoxUpload";
             this.groupBoxUpload.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
-            this.groupBoxUpload.Size = new System.Drawing.Size(330, 108);
-            this.groupBoxUpload.TabIndex = 10;
+            this.groupBoxUpload.Size = new System.Drawing.Size(337, 112);
+            this.groupBoxUpload.TabIndex = 13;
             this.groupBoxUpload.TabStop = false;
             this.groupBoxUpload.Text = "上报设置";
             // 
@@ -305,10 +293,10 @@ namespace HousingCheck
             this.groupBoxNotify.Controls.Add(this.checkBoxNotification);
             this.groupBoxNotify.Controls.Add(this.checkboxTTS);
             this.groupBoxNotify.Dock = System.Windows.Forms.DockStyle.Top;
-            this.groupBoxNotify.Location = new System.Drawing.Point(7, 6);
+            this.groupBoxNotify.Location = new System.Drawing.Point(3, 3);
             this.groupBoxNotify.Name = "groupBoxNotify";
-            this.groupBoxNotify.Size = new System.Drawing.Size(330, 152);
-            this.groupBoxNotify.TabIndex = 9;
+            this.groupBoxNotify.Size = new System.Drawing.Size(337, 152);
+            this.groupBoxNotify.TabIndex = 12;
             this.groupBoxNotify.TabStop = false;
             this.groupBoxNotify.Text = "通知设置";
             // 
@@ -434,16 +422,69 @@ namespace HousingCheck
             this.checkboxTTS.Text = "语音播报";
             this.checkboxTTS.UseVisualStyleBackColor = true;
             // 
-            // panel2
+            // groupBoxControl
             // 
-            this.panel2.Controls.Add(this.groupBoxTable);
-            this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel2.Location = new System.Drawing.Point(0, 0);
-            this.panel2.Margin = new System.Windows.Forms.Padding(2);
-            this.panel2.Name = "panel2";
-            this.panel2.Padding = new System.Windows.Forms.Padding(14, 6, 7, 7);
-            this.panel2.Size = new System.Drawing.Size(589, 655);
-            this.panel2.TabIndex = 5;
+            this.groupBoxControl.Controls.Add(this.buttonCopyToClipboard);
+            this.groupBoxControl.Controls.Add(this.buttonSaveToFile);
+            this.groupBoxControl.Controls.Add(this.buttonUploadOnce);
+            this.groupBoxControl.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxControl.Location = new System.Drawing.Point(3, 3);
+            this.groupBoxControl.Margin = new System.Windows.Forms.Padding(3, 12, 3, 3);
+            this.groupBoxControl.Name = "groupBoxControl";
+            this.groupBoxControl.Size = new System.Drawing.Size(337, 55);
+            this.groupBoxControl.TabIndex = 15;
+            this.groupBoxControl.TabStop = false;
+            this.groupBoxControl.Text = "操作";
+            // 
+            // buttonCopyToClipboard
+            // 
+            this.buttonCopyToClipboard.Location = new System.Drawing.Point(224, 21);
+            this.buttonCopyToClipboard.Name = "buttonCopyToClipboard";
+            this.buttonCopyToClipboard.Size = new System.Drawing.Size(98, 23);
+            this.buttonCopyToClipboard.TabIndex = 0;
+            this.buttonCopyToClipboard.Text = "复制到剪贴板";
+            this.buttonCopyToClipboard.UseVisualStyleBackColor = true;
+            // 
+            // buttonSaveToFile
+            // 
+            this.buttonSaveToFile.Location = new System.Drawing.Point(117, 21);
+            this.buttonSaveToFile.Name = "buttonSaveToFile";
+            this.buttonSaveToFile.Size = new System.Drawing.Size(98, 23);
+            this.buttonSaveToFile.TabIndex = 0;
+            this.buttonSaveToFile.Text = "保存到文件";
+            this.buttonSaveToFile.UseVisualStyleBackColor = true;
+            // 
+            // buttonUploadOnce
+            // 
+            this.buttonUploadOnce.Location = new System.Drawing.Point(10, 21);
+            this.buttonUploadOnce.Name = "buttonUploadOnce";
+            this.buttonUploadOnce.Size = new System.Drawing.Size(98, 23);
+            this.buttonUploadOnce.TabIndex = 0;
+            this.buttonUploadOnce.Text = "手动上报一次";
+            this.buttonUploadOnce.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxLog
+            // 
+            this.groupBoxLog.Controls.Add(this.textBoxLog);
+            this.groupBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBoxLog.Location = new System.Drawing.Point(3, 58);
+            this.groupBoxLog.Name = "groupBoxLog";
+            this.groupBoxLog.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
+            this.groupBoxLog.Size = new System.Drawing.Size(337, 559);
+            this.groupBoxLog.TabIndex = 16;
+            this.groupBoxLog.TabStop = false;
+            this.groupBoxLog.Text = "日志";
+            // 
+            // textBoxLog
+            // 
+            this.textBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.textBoxLog.Location = new System.Drawing.Point(7, 20);
+            this.textBoxLog.Multiline = true;
+            this.textBoxLog.Name = "textBoxLog";
+            this.textBoxLog.ReadOnly = true;
+            this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBoxLog.Size = new System.Drawing.Size(323, 533);
+            this.textBoxLog.TabIndex = 0;
             // 
             // PluginControl
             // 
@@ -458,10 +499,11 @@ namespace HousingCheck
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.housingCheckBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginControlBindingSource)).EndInit();
+            this.panel2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
-            this.groupBoxLog.ResumeLayout(false);
-            this.groupBoxLog.PerformLayout();
-            this.groupBoxControl.ResumeLayout(false);
+            this.tabControl1.ResumeLayout(false);
+            this.TabLog.ResumeLayout(false);
+            this.TabSetting.ResumeLayout(false);
             this.groupBoxUpload.ResumeLayout(false);
             this.groupBoxUpload.PerformLayout();
             this.groupBoxNotify.ResumeLayout(false);
@@ -471,7 +513,9 @@ namespace HousingCheck
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).EndInit();
             this.groupBoxNotifyHouse.ResumeLayout(false);
             this.groupBoxNotifyHouse.PerformLayout();
-            this.panel2.ResumeLayout(false);
+            this.groupBoxControl.ResumeLayout(false);
+            this.groupBoxLog.ResumeLayout(false);
+            this.groupBoxLog.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -481,15 +525,12 @@ namespace HousingCheck
         private System.Windows.Forms.GroupBox groupBoxTable;
         private System.Windows.Forms.BindingSource housingCheckBindingSource;
         public System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.BindingSource pluginControlBindingSource;
-        private System.Windows.Forms.GroupBox groupBoxLog;
-        public System.Windows.Forms.TextBox textBoxLog;
-        private System.Windows.Forms.GroupBox groupBoxControl;
-        public System.Windows.Forms.Button buttonCopyToClipboard;
-        public System.Windows.Forms.Button buttonSaveToFile;
-        public System.Windows.Forms.Button buttonUploadOnce;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage TabLog;
+        private System.Windows.Forms.TabPage TabSetting;
         private System.Windows.Forms.GroupBox groupBoxUpload;
         public System.Windows.Forms.ComboBox selectApiVersion;
         private System.Windows.Forms.Label label4;
@@ -501,8 +542,6 @@ namespace HousingCheck
         public System.Windows.Forms.TextBox textBoxUpload;
         private System.Windows.Forms.CheckBox checkBoxUpload;
         private System.Windows.Forms.GroupBox groupBoxNotify;
-        private System.Windows.Forms.CheckBox checkBoxNotification;
-        private System.Windows.Forms.CheckBox checkboxTTS;
         private System.Windows.Forms.GroupBox groupBoxNotifyCheck;
         public System.Windows.Forms.Button buttonNotifyCheckTest;
         private System.Windows.Forms.NumericUpDown numericUpDownNotifyCheck;
@@ -512,5 +551,13 @@ namespace HousingCheck
         private System.Windows.Forms.CheckBox checkBoxNotifyML;
         private System.Windows.Forms.CheckBox checkBoxNotifyS;
         public System.Windows.Forms.Button buttonNotifyTest;
+        private System.Windows.Forms.CheckBox checkBoxNotification;
+        private System.Windows.Forms.CheckBox checkboxTTS;
+        private System.Windows.Forms.GroupBox groupBoxLog;
+        public System.Windows.Forms.TextBox textBoxLog;
+        private System.Windows.Forms.GroupBox groupBoxControl;
+        public System.Windows.Forms.Button buttonCopyToClipboard;
+        public System.Windows.Forms.Button buttonSaveToFile;
+        public System.Windows.Forms.Button buttonUploadOnce;
     }
 }

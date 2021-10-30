@@ -165,15 +165,5 @@ namespace HousingCheck
             xWriter.Flush();                        // Flush the file buffer to disk
             xWriter.Close();
         }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void textBoxUpload_TextChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }
