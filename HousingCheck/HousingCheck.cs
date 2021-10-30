@@ -38,7 +38,7 @@ namespace HousingCheck
         /// 房屋列表，用于和控件双向绑定
         /// </summary>
         public ObservableCollection<HousingOnSaleItem> HousingList = new ObservableCollection<HousingOnSaleItem>();
-        
+
         /// <summary>
         /// 库啵，库啵啵？
         /// </summary>
@@ -90,7 +90,7 @@ namespace HousingCheck
         /// 房屋详细信息存储
         /// </summary>
         LandInfoSignStorage LandInfoSignStorage = new LandInfoSignStorage();
-        
+
         /// <summary>
         /// 用户上次操作的时间
         /// </summary>
@@ -127,14 +127,14 @@ namespace HousingCheck
             ffxivPlugin = null;
 
             var plugins = ActGlobals.oFormActMain.ActPlugins;
-            
+
             foreach (var plugin in plugins)
                 if (plugin.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
                     plugin.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()))
                     ffxivPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin.pluginObj;
 
             if (ffxivPlugin == null)
-                throw new Exception("Could not find FFXIV plugin. Make sure that it is loaded before CutsceneSkip.");
+                throw new Exception("Could not find FFXIV plugin. Make sure that it is loaded before HousingCheck.");
 
             return ffxivPlugin;
         }
@@ -143,10 +143,7 @@ namespace HousingCheck
         {
             if (initialized)
             {
-                var subs = ffxivPlugin.GetType().GetProperty("DataSubscription").GetValue(ffxivPlugin, null);
-                var networkReceivedDelegateType = typeof(NetworkReceivedDelegate);
-                var networkReceivedDelegate = Delegate.CreateDelegate(networkReceivedDelegateType, (object)this, "NetworkReceived", true);
-                subs.GetType().GetEvent("NetworkReceived").RemoveEventHandler(subs, networkReceivedDelegate);
+                ffxivPlugin.DataSubscription.NetworkReceived -= NetworkReceived;
                 AutoSaveThread.CancelAsync();
                 LogQueueWorker.CancelAsync();
                 TickWorker.CancelAsync();
@@ -169,7 +166,7 @@ namespace HousingCheck
             housingBindingSource = new BindingSource { DataSource = HousingList };
             control.dataGridView1.DataSource = housingBindingSource;
             control.dataGridView1.UserDeletedRow += OnTableUpdated;
-            foreach(DataGridViewColumn col in control.dataGridView1.Columns)
+            foreach (DataGridViewColumn col in control.dataGridView1.Columns)
             {
                 col.SortMode = DataGridViewColumnSortMode.Automatic;
             }
@@ -177,12 +174,10 @@ namespace HousingCheck
             control.Dock = DockStyle.Fill;
             pluginScreenSpace.Controls.Add(control);
 
-            var subs = ffxivPlugin.GetType().GetProperty("DataSubscription").GetValue(ffxivPlugin, null);
-            var networkReceivedDelegateType = typeof(NetworkReceivedDelegate);
-            var networkReceivedDelegate = Delegate.CreateDelegate(networkReceivedDelegateType, (object)this, "NetworkReceived", true);
-            subs.GetType().GetEvent("NetworkReceived").AddEventHandler(subs, networkReceivedDelegate);
+            ffxivPlugin.DataSubscription.NetworkReceived += NetworkReceived;
+
             initialized = true;
-            
+
             AutoSaveThread = new BackgroundWorker
             {
                 WorkerSupportsCancellation = true
@@ -197,7 +192,7 @@ namespace HousingCheck
             LogQueueWorker.DoWork += RunLogQueueWorker;
             LogQueueWorker.RunWorkerAsync();
 
-            TickWorker = new BackgroundWorker{ WorkerSupportsCancellation = true };
+            TickWorker = new BackgroundWorker { WorkerSupportsCancellation = true };
             TickWorker.DoWork += TickDoWorker;
             TickWorker.RunWorkerAsync();
 
@@ -233,7 +228,7 @@ namespace HousingCheck
             if (onSaleItem.Size == HouseSize.S && !control.EnableNotifyHouseS)
                 return;
 
-            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !control.EnableNotifyHouseML) 
+            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !control.EnableNotifyHouseML)
                 return;
 
             bool fallback = true;
@@ -248,7 +243,7 @@ namespace HousingCheck
                     )
                 );
                 fallback = false;
-            } 
+            }
             if (control.EnableNotification)
             {
                 var title = string.Format("{0} 第{1}区 {2}号 {3}房",
@@ -281,16 +276,17 @@ namespace HousingCheck
         {
             var time = (DateTime.Now).ToString("HH:mm:ss");
             var text = $"[{time}] [{type}] {message.Trim()}";
-            control.BeginInvoke(new Action<string>((msg) => {
+            control.BeginInvoke(new Action<string>((msg) =>
+            {
                 control.textBoxLog.AppendText(text + Environment.NewLine);
                 control.textBoxLog.SelectionStart = control.textBoxLog.TextLength;
                 control.textBoxLog.ScrollToCaret();
             }), text);
 
-            var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
             //ActGlobals.oFormActMain.ParseRawLogLine(true, DateTime.Now, $"{text}");
             if (important)
             {
+                var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
                 LogQueue.Add((DateTime.Now, logText));
             }
         }
@@ -315,7 +311,7 @@ namespace HousingCheck
                 if (opcode == OPCODE)
                 {
                     WardInfoParser(message);
-                } 
+                }
                 else
                 {
                     //Log("Debug", "opcode=" + opcode);
@@ -357,7 +353,7 @@ namespace HousingCheck
 
                     //查找并更新原有房屋
                     var oldOnSaleItems = oldOnSaleList.Where(x => x.Id == house.Id);
-                    foreach(var oldOnSaleItem in oldOnSaleItems)
+                    foreach (var oldOnSaleItem in oldOnSaleItems)
                     {
                         updatedHousingList.Add(onSaleItem);
                         isExists = true;
@@ -389,7 +385,9 @@ namespace HousingCheck
                         LandInfoSignStorage.Add(signInfo);
                         LandInfoUpdated = true;
 
-                    } else if (isExists) {
+                    }
+                    else if (isExists)
+                    {
                         removeList.Add(onSaleItem);
                     }
                 }
@@ -420,7 +418,7 @@ namespace HousingCheck
                 LandInfoUpdated = true;
 
                 LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
-            } 
+            }
             catch (Exception e)
             {
                 Log("Error", e, "查询房屋信息出错：");
@@ -469,13 +467,13 @@ namespace HousingCheck
             try
             {
                 var list = JsonConvert.DeserializeObject<HousingOnSaleItem[]>(jsonStr);
-                foreach(var item in list)
+                foreach (var item in list)
                 {
                     housingBindingSource.Add(item);
                 }
                 Log("Info", "已恢复上次保存的房屋列表");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log("Error", ex, "恢复上次保存的房屋列表失败：");
             }
@@ -512,7 +510,7 @@ namespace HousingCheck
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var line in HousingList)
             {
-                if (!line.CurrentStatus) 
+                if (!line.CurrentStatus)
                     continue;
 
                 stringBuilder.Append($"{line.AreaStr} 第{line.DisplaySlot}区 {line.DisplayId}号{line.SizeStr}房在售，当前价格:{line.Price} {Environment.NewLine}");
@@ -544,10 +542,11 @@ namespace HousingCheck
 
         public void UpdateTable(List<HousingOnSaleItem> items)
         {
-            foreach(HousingOnSaleItem item in items)
+            foreach (HousingOnSaleItem item in items)
             {
                 int listIndex;
-                if((listIndex = HousingList.IndexOf(item)) != -1){
+                if ((listIndex = HousingList.IndexOf(item)) != -1)
+                {
                     (housingBindingSource[listIndex] as HousingOnSaleItem).Update(item);
                 }
                 else
@@ -588,7 +587,7 @@ namespace HousingCheck
                 }
                 if (LogQueue.Count > 0)
                 {
-                    while(LogQueue.Count > 0)
+                    while (LogQueue.Count > 0)
                     {
                         var data = LogQueue.First();
                         LogQueue.RemoveAt(0);
@@ -605,71 +604,54 @@ namespace HousingCheck
         private void RunAutoUploadWorker(object sender, DoWorkEventArgs e)
         {
             long actionTime;
-            bool dataUpdated;
             int snapshotCount;
             bool autoUpload;
-            bool manualUpload;
             bool uploadSnapshot;
             ApiVersion apiVersion;
-            while (true)
+            while (!AutoSaveThread.CancellationPending)
             {
-                if (AutoSaveThread.CancellationPending)
-                {
-                    break;
-                }
                 actionTime = LastOperateTime + AutoSaveAfter;
-                dataUpdated = HousingListUpdated;
                 snapshotCount = WillUploadSnapshot.Count;
                 autoUpload = control.upload;
-                manualUpload = ManualUpload;
                 uploadSnapshot = control.EnableUploadSnapshot;
                 apiVersion = control.UploadApiVersion;
 
-                if (manualUpload)
+                if (ManualUpload)
                 {
+                    Log("Debug", "手动开始上报");
                     UploadOnSaleList(apiVersion);
                     HousingListUpdated = false;
                     LandInfoUpdated = false;
-                     // 手动上传在任何情况下都应当上传存储的数据
+                    // 手动上传在任何情况下都应当上传存储的数据
                     if (apiVersion == ApiVersion.V2 && uploadSnapshot)
                     {
                         if (snapshotCount > 0)
                             UploadSnapshot();
- 
-                        if (LandInfoSignStorage.UploadCount > 0) 
+
+                        if (LandInfoSignStorage.UploadCount > 0)
                             UploadLandInfoSnapshot();
                     }
                     ManualUpload = false;
                 }
                 else if (actionTime <= new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds())
                 {
-                    if (dataUpdated || snapshotCount > 0) //如果有更新
+                    if (HousingListUpdated)
                     {
-                        if (dataUpdated)
-                        {
-                            //保存列表文件
-                            SaveHousingList();
-                            Log("Info", "房屋信息已保存");
-                            if (autoUpload)
-                            {
-                                //自动上报
-                                UploadOnSaleList(apiVersion);
-                            }
-                            HousingListUpdated = false;
-                        }
+                        //保存列表文件
+                        SaveHousingList();
+                        Log("Info", "房屋信息已保存");
+                        if (autoUpload) UploadOnSaleList(apiVersion);
 
-                        // 自动上传永远在数据更新后上传快照
-                        if (autoUpload && apiVersion == ApiVersion.V2 && 
-                            uploadSnapshot && SnapshotUpdated)
-                        {
-                            //上传快照
-                            UploadSnapshot();
-                        }
+                        HousingListUpdated = false;
                     }
 
-                    if (autoUpload && apiVersion == ApiVersion.V2 && uploadSnapshot && LandInfoUpdated)
+                    if (autoUpload)
                     {
-                        UploadLandInfoSnapshot();
+                        if (apiVersion == ApiVersion.V2 && uploadSnapshot)
+                        {
+                            if (SnapshotUpdated) UploadSnapshot();
+                            if (LandInfoUpdated) UploadLandInfoSnapshot();
+                        }
                     }
                 }
                 Thread.Sleep(500);
@@ -712,7 +694,7 @@ namespace HousingCheck
         {
             DateTime nextNotify = GetNextNotifyTime();
             DateTime lastNotify = DateTime.Now.AddSeconds(-1);
-            while(!TickWorker.CancellationPending) 
+            while (!TickWorker.CancellationPending)
             {
                 if (DateTime.Now > nextNotify.AddSeconds(-control.CheckNotifyAheadTime))
                 {
@@ -769,23 +751,23 @@ namespace HousingCheck
                     Encoding.UTF8.GetBytes(postContent)
                 );
                 string res = Encoding.UTF8.GetString(response);
-                if(res.Length > 0)
+                if (res.Length > 0)
                 {
-                    if(res[0] == '{')
+                    if (res[0] == '{')
                     {
                         var jsonRes = JsonConvert.DeserializeObject<Dictionary<string, string>>(res);
-                        if(jsonRes["statusText"].ToLower() == "ok")
+                        if (jsonRes["statusText"].ToLower() == "ok")
                         {
                             return true;
-                        } 
+                        }
                         else
                         {
                             Log("Error", "上传出错：" + jsonRes["errorMessage"]);
                         }
-                    } 
+                    }
                     else
                     {
-                        if(res.ToLower() == "ok")
+                        if (res.ToLower() == "ok")
                         {
                             return true;
                         }
@@ -796,7 +778,7 @@ namespace HousingCheck
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log("Error", ex, "上传出错：");
             }
@@ -817,7 +799,7 @@ namespace HousingCheck
                     mime = "application/x-www-form-urlencoded";
                     break;
             }
-            if(postContent.Length == 0)
+            if (postContent.Length == 0)
             {
                 Log("Error", "上报数据为空");
             }
@@ -840,7 +822,7 @@ namespace HousingCheck
             try
             {
                 List<HousingSlotSnapshotJSONObject> snapshotJSONObjects = new List<HousingSlotSnapshotJSONObject>();
-                foreach(var snapshot in WillUploadSnapshot.Values)
+                foreach (var snapshot in WillUploadSnapshot.Values)
                 {
                     if (snapshot != null)
                     {
@@ -860,7 +842,7 @@ namespace HousingCheck
                     Thread.Sleep(1000);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log("Error", ex, "房区快照上报出错：");
             }
