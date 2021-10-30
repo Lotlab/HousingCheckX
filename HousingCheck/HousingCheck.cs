@@ -714,7 +714,7 @@ namespace HousingCheck
             protected override WebRequest GetWebRequest(Uri uri)
             {
                 WebRequest w = base.GetWebRequest(uri);
-                w.Timeout = 20 * 1000; // 20s
+                w.Timeout = 30 * 1000; // 30s
                 return w;
             }
         }

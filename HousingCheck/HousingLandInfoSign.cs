@@ -178,7 +178,7 @@ namespace HousingCheck
                     item.OwnerName,
                     item.FcTag,
                     item.EstateName, 
-                    item.EstateGreeting.Replace("\r", "\\n"), // 描述内换行替换
+                    item.EstateGreeting?.Replace("\r", "\\n"), // 描述内换行替换
                     item.Time)
                 );
             }
