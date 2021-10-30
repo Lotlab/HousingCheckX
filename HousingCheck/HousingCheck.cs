@@ -554,6 +554,7 @@ namespace HousingCheck
                     housingBindingSource.Add(item);
                 }
             }
+            housingBindingSource.ResetBindings(false);
         }
 
         /// <summary>
@@ -569,6 +570,7 @@ namespace HousingCheck
                     housingBindingSource.Remove(item);
                 }
             }
+            housingBindingSource.ResetBindings(false);
         }
 
         private void OnTableUpdated(object sender, DataGridViewRowEventArgs e)
