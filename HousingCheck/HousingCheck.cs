@@ -605,59 +605,65 @@ namespace HousingCheck
 
         private void RunAutoUploadWorker(object sender, DoWorkEventArgs e)
         {
-            long actionTime;
-            int snapshotCount;
-            bool autoUpload;
-            bool uploadSnapshot;
-            ApiVersion apiVersion;
             while (!AutoSaveThread.CancellationPending)
             {
-                actionTime = LastOperateTime + AutoSaveAfter;
-                snapshotCount = WillUploadSnapshot.Count;
-                autoUpload = control.upload;
-                uploadSnapshot = control.EnableUploadSnapshot;
-                apiVersion = control.UploadApiVersion;
-
-                if (ManualUpload)
+                try
                 {
-                    Log("Debug", "手动开始上报");
-                    UploadOnSaleList(apiVersion);
-                    HousingListUpdated = false;
-                    LandInfoUpdated = false;
-                    // 手动上传在任何情况下都应当上传存储的数据
-                    if (apiVersion == ApiVersion.V2 && uploadSnapshot)
-                    {
-                        if (snapshotCount > 0)
-                            UploadSnapshot();
+                    long actionTime = LastOperateTime + AutoSaveAfter;
+                    int snapshotCount = WillUploadSnapshot.Count;
+                    bool autoUpload = control.upload;
+                    bool uploadSnapshot = control.EnableUploadSnapshot;
+                    ApiVersion apiVersion = control.UploadApiVersion;
 
-                        if (LandInfoSignStorage.UploadCount > 0)
-                            UploadLandInfoSnapshot();
-                    }
-                    ManualUpload = false;
-                }
-                else if (actionTime <= new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds())
-                {
-                    if (HousingListUpdated)
+                    if (ManualUpload)
                     {
-                        //保存列表文件
-                        SaveHousingList();
-                        Log("Info", "房屋信息已保存");
-                        if (autoUpload) UploadOnSaleList(apiVersion);
-
+                        Log("Debug", "手动开始上报");
+                        UploadOnSaleList(apiVersion);
                         HousingListUpdated = false;
-                    }
-
-                    if (autoUpload)
-                    {
+                        LandInfoUpdated = false;
+                        // 手动上传在任何情况下都应当上传存储的数据
                         if (apiVersion == ApiVersion.V2 && uploadSnapshot)
                         {
-                            if (SnapshotUpdated) UploadSnapshot();
-                            if (LandInfoUpdated) UploadLandInfoSnapshot();
+                            if (snapshotCount > 0)
+                                UploadSnapshot();
+
+                            if (LandInfoSignStorage.UploadCount > 0)
+                                UploadLandInfoSnapshot();
+                        }
+                        ManualUpload = false;
+                        Log("Debug", "手动上报任务执行完毕");
+                    }
+                    else if (actionTime <= new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds())
+                    {
+                        if (HousingListUpdated)
+                        {
+                            //保存列表文件
+                            SaveHousingList();
+                            Log("Info", "房屋信息已保存");
+                            if (autoUpload) UploadOnSaleList(apiVersion);
+
+                            HousingListUpdated = false;
+                        }
+
+                        if (autoUpload)
+                        {
+                            if (apiVersion == ApiVersion.V2 && uploadSnapshot)
+                            {
+                                if (SnapshotUpdated) UploadSnapshot();
+                                if (LandInfoUpdated) UploadLandInfoSnapshot();
+                            }
                         }
                     }
+                } 
+                catch (Exception ex)
+                {
+                    Log("Error", ex, "执行定时任务时出现错误");
                 }
+
                 Thread.Sleep(500);
             }
+
+            Log("Error", "上报线程退出！！！！");
         }
 
         private DateTime GetNextNotifyTime()
