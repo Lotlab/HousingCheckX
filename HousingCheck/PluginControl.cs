@@ -86,6 +86,31 @@ namespace HousingCheck
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\HousingCheck.config.xml");
         public bool upload;
         public Dictionary<string, ApiVersion> apiVersionList = new Dictionary<string, ApiVersion>();
+
+        /// <summary>
+        /// 调试模式是否开启
+        /// </summary>
+        public bool DebugEnabled => checkBoxDebug.Checked;
+        /// <summary>
+        /// 是否勾上禁用Opcode检测
+        /// </summary>
+        public bool DisableOpcodeCheck => checkBoxDisableOpcode.Checked;
+        /// <summary>
+        /// 是否勾上使用自定义Opcode
+        /// </summary>
+        public bool UseCustomOpcode => checkBoxUseCustomOpcode.Checked;
+
+        int opcodeWard;
+        int opcodeLand;
+        /// <summary>
+        /// 房屋列表Opcode
+        /// </summary>
+        public int OpcodeWard => (UseCustomOpcode && !DisableOpcodeCheck) ? opcodeWard : HousingCheck.OPCODE_WARD_INFO;
+        /// <summary>
+        /// 房屋门牌Opcode
+        /// </summary>
+        public int OpcodeLand => (UseCustomOpcode && !DisableOpcodeCheck) ? opcodeLand : HousingCheck.OPCODE_LAND_INFO;
+
         public PluginControl()
         {
             InitializeComponent();
@@ -135,6 +160,19 @@ namespace HousingCheck
                     checkBoxNotifyS.Checked = bool.Parse(head?.SelectSingleNode("NotifyHouseS")?.InnerText ?? "false");
                     checkBoxNotifyCheck.Checked = bool.Parse(head?.SelectSingleNode("NotifyCheck")?.InnerText ?? "false");
                     numericUpDownNotifyCheck.Value = int.Parse(head?.SelectSingleNode("NotifyCheckAhead")?.InnerText ?? "120");
+
+                    checkBoxDebug.Checked = bool.Parse(head?.SelectSingleNode("Debug")?.InnerText ?? "false");
+                    checkBoxDisableOpcode.Checked = bool.Parse(head?.SelectSingleNode("DisableOpcodeCheck")?.InnerText ?? "false");
+                    checkBoxUseCustomOpcode.Checked = bool.Parse(head?.SelectSingleNode("UseCustomOpcode")?.InnerText ?? "false");
+
+                    textBoxOpcodeWard.Text = head?.SelectSingleNode("CustomOpcodeWard")?.InnerText ?? HousingCheck.OPCODE_WARD_INFO.ToString();
+                    textBoxOpcodeLand.Text = head?.SelectSingleNode("CustomOpcodeLand")?.InnerText ?? HousingCheck.OPCODE_LAND_INFO.ToString();
+
+                    checkBoxDebug_CheckedChanged(null, null);
+                    checkBoxDisableOpcode_CheckedChanged(null, null);
+                    checkBoxUseCustomOpcode_CheckedChanged(null, null);
+                    textBoxOpcodeWard_TextChanged(textBoxOpcodeWard, null);
+                    textBoxOpcodeLand_TextChanged(textBoxOpcodeLand, null);
                 }
                 catch (Exception)
                 {
@@ -160,10 +198,45 @@ namespace HousingCheck
             xWriter.WriteElementString("NotifyHouseS", checkBoxNotifyS.Checked.ToString());
             xWriter.WriteElementString("NotifyCheck", checkBoxNotifyCheck.Checked.ToString());
             xWriter.WriteElementString("NotifyCheckAhead", numericUpDownNotifyCheck.Value.ToString());
+
+            xWriter.WriteElementString("Debug", checkBoxDebug.Checked.ToString());
+            xWriter.WriteElementString("DisableOpcodeCheck", checkBoxDisableOpcode.Checked.ToString());
+            xWriter.WriteElementString("UseCustomOpcode", checkBoxUseCustomOpcode.Checked.ToString());
+            xWriter.WriteElementString("CustomOpcodeWard", textBoxOpcodeWard.Text);
+            xWriter.WriteElementString("CustomOpcodeLand", textBoxOpcodeLand.Text);
+
             xWriter.WriteEndElement();              // </Config>
             xWriter.WriteEndDocument();             // Tie up loose ends (shouldn't be any)
             xWriter.Flush();                        // Flush the file buffer to disk
             xWriter.Close();
+        }
+
+        private void checkBoxDebug_CheckedChanged(object sender, EventArgs e)
+        {
+            groupBoxDebug.Visible = DebugEnabled;
+        }
+
+        private void checkBoxDisableOpcode_CheckedChanged(object sender, EventArgs e)
+        {
+            checkBoxUseCustomOpcode.Enabled = !DisableOpcodeCheck;
+            groupBoxOpcode.Enabled = (UseCustomOpcode && !DisableOpcodeCheck);
+        }
+
+        private void checkBoxUseCustomOpcode_CheckedChanged(object sender, EventArgs e)
+        {
+            groupBoxOpcode.Enabled = (UseCustomOpcode && !DisableOpcodeCheck);
+        }
+
+        private void textBoxOpcodeWard_TextChanged(object sender, EventArgs e)
+        {
+            TextBox t = sender as TextBox;
+            opcodeWard = UInt16.Parse(t.Text);
+        }
+
+        private void textBoxOpcodeLand_TextChanged(object sender, EventArgs e)
+        {
+            TextBox t = sender as TextBox;
+            opcodeLand = UInt16.Parse(t.Text);
         }
     }
 }

@@ -32,8 +32,12 @@ namespace HousingCheck
 
     public class HousingCheck : IActPluginV1
     {
-        public const int OPCODE = 585;
+        /// <summary>
+        /// 国服版本5.55 Opcode
+        /// </summary>
+        public const int OPCODE_WARD_INFO = 585;
         public const int OPCODE_LAND_INFO = 0x136;
+
         /// <summary>
         /// 房屋列表，用于和控件双向绑定
         /// </summary>
@@ -308,19 +312,25 @@ namespace HousingCheck
             var opcode = BitConverter.ToUInt16(message, 18);
             if (message.Length == 2440)
             {
-                if (opcode == OPCODE)
+                if (opcode == control.OpcodeWard || control.DisableOpcodeCheck)
                 {
                     WardInfoParser(message);
                 }
-                else
+                if (opcode != control.OpcodeWard && control.DebugEnabled)
                 {
-                    //Log("Debug", "opcode=" + opcode);
+                    Log("Debug", "房屋列表Opcode不匹配！可能的Opcode为：" + opcode);
                 }
             }
-
-            if (opcode == OPCODE_LAND_INFO)
+            if (message.Length == 312)
             {
-                LandInfoParser(message);
+                if (opcode == control.OpcodeLand || control.DisableOpcodeCheck)
+                {
+                    LandInfoParser(message);
+                }
+                if (opcode != control.OpcodeLand && control.DebugEnabled)
+                {
+                    Log("Debug", "房屋门牌Opcode不匹配！可能的Opcode为：" + opcode);
+                }
             }
         }
 

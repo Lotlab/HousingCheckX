@@ -45,6 +45,10 @@ namespace HousingCheck
             this.buttonSaveToFile = new System.Windows.Forms.Button();
             this.buttonUploadOnce = new System.Windows.Forms.Button();
             this.TabSetting = new System.Windows.Forms.TabPage();
+            this.groupBoxDebug = new System.Windows.Forms.GroupBox();
+            this.checkBoxDisableOpcode = new System.Windows.Forms.CheckBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.checkBoxDebug = new System.Windows.Forms.CheckBox();
             this.groupBoxUpload = new System.Windows.Forms.GroupBox();
             this.selectApiVersion = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -67,6 +71,12 @@ namespace HousingCheck
             this.buttonNotifyTest = new System.Windows.Forms.Button();
             this.checkBoxNotification = new System.Windows.Forms.CheckBox();
             this.checkboxTTS = new System.Windows.Forms.CheckBox();
+            this.checkBoxUseCustomOpcode = new System.Windows.Forms.CheckBox();
+            this.groupBoxOpcode = new System.Windows.Forms.GroupBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.textBoxOpcodeWard = new System.Windows.Forms.TextBox();
+            this.label8 = new System.Windows.Forms.Label();
+            this.textBoxOpcodeLand = new System.Windows.Forms.TextBox();
             this.groupBoxTable.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.housingCheckBindingSource)).BeginInit();
@@ -78,11 +88,13 @@ namespace HousingCheck
             this.groupBoxLog.SuspendLayout();
             this.groupBoxControl.SuspendLayout();
             this.TabSetting.SuspendLayout();
+            this.groupBoxDebug.SuspendLayout();
             this.groupBoxUpload.SuspendLayout();
             this.groupBoxNotify.SuspendLayout();
             this.groupBoxNotifyCheck.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).BeginInit();
             this.groupBoxNotifyHouse.SuspendLayout();
+            this.groupBoxOpcode.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBoxTable
@@ -226,6 +238,8 @@ namespace HousingCheck
             // 
             // TabSetting
             // 
+            this.TabSetting.Controls.Add(this.groupBoxDebug);
+            this.TabSetting.Controls.Add(this.checkBoxDebug);
             this.TabSetting.Controls.Add(this.groupBoxUpload);
             this.TabSetting.Controls.Add(this.groupBoxNotify);
             this.TabSetting.Location = new System.Drawing.Point(4, 22);
@@ -235,6 +249,53 @@ namespace HousingCheck
             this.TabSetting.TabIndex = 1;
             this.TabSetting.Text = "设置";
             this.TabSetting.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxDebug
+            // 
+            this.groupBoxDebug.Controls.Add(this.groupBoxOpcode);
+            this.groupBoxDebug.Controls.Add(this.checkBoxUseCustomOpcode);
+            this.groupBoxDebug.Controls.Add(this.checkBoxDisableOpcode);
+            this.groupBoxDebug.Controls.Add(this.label6);
+            this.groupBoxDebug.Dock = System.Windows.Forms.DockStyle.Top;
+            this.groupBoxDebug.Location = new System.Drawing.Point(3, 293);
+            this.groupBoxDebug.Name = "groupBoxDebug";
+            this.groupBoxDebug.Size = new System.Drawing.Size(337, 165);
+            this.groupBoxDebug.TabIndex = 15;
+            this.groupBoxDebug.TabStop = false;
+            this.groupBoxDebug.Text = "调试设置";
+            // 
+            // checkBoxDisableOpcode
+            // 
+            this.checkBoxDisableOpcode.AutoSize = true;
+            this.checkBoxDisableOpcode.Location = new System.Drawing.Point(10, 41);
+            this.checkBoxDisableOpcode.Name = "checkBoxDisableOpcode";
+            this.checkBoxDisableOpcode.Size = new System.Drawing.Size(108, 16);
+            this.checkBoxDisableOpcode.TabIndex = 1;
+            this.checkBoxDisableOpcode.Text = "禁用Opcode过滤";
+            this.checkBoxDisableOpcode.UseVisualStyleBackColor = true;
+            this.checkBoxDisableOpcode.CheckedChanged += new System.EventHandler(this.checkBoxDisableOpcode_CheckedChanged);
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(8, 21);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(305, 12);
+            this.label6.TabIndex = 0;
+            this.label6.Text = "修改调试设置可能会造成插件工作不正常，请谨慎修改。";
+            // 
+            // checkBoxDebug
+            // 
+            this.checkBoxDebug.AutoSize = true;
+            this.checkBoxDebug.Dock = System.Windows.Forms.DockStyle.Top;
+            this.checkBoxDebug.Location = new System.Drawing.Point(3, 267);
+            this.checkBoxDebug.Name = "checkBoxDebug";
+            this.checkBoxDebug.Padding = new System.Windows.Forms.Padding(5);
+            this.checkBoxDebug.Size = new System.Drawing.Size(337, 26);
+            this.checkBoxDebug.TabIndex = 14;
+            this.checkBoxDebug.Text = "启用调试设置";
+            this.checkBoxDebug.UseVisualStyleBackColor = true;
+            this.checkBoxDebug.CheckedChanged += new System.EventHandler(this.checkBoxDebug_CheckedChanged);
             // 
             // groupBoxUpload
             // 
@@ -486,6 +547,64 @@ namespace HousingCheck
             this.checkboxTTS.Text = "语音播报";
             this.checkboxTTS.UseVisualStyleBackColor = true;
             // 
+            // checkBoxUseCustomOpcode
+            // 
+            this.checkBoxUseCustomOpcode.AutoSize = true;
+            this.checkBoxUseCustomOpcode.Location = new System.Drawing.Point(10, 64);
+            this.checkBoxUseCustomOpcode.Name = "checkBoxUseCustomOpcode";
+            this.checkBoxUseCustomOpcode.Size = new System.Drawing.Size(120, 16);
+            this.checkBoxUseCustomOpcode.TabIndex = 2;
+            this.checkBoxUseCustomOpcode.Text = "使用自定义Opcode";
+            this.checkBoxUseCustomOpcode.UseVisualStyleBackColor = true;
+            this.checkBoxUseCustomOpcode.CheckedChanged += new System.EventHandler(this.checkBoxUseCustomOpcode_CheckedChanged);
+            // 
+            // groupBoxOpcode
+            // 
+            this.groupBoxOpcode.Controls.Add(this.textBoxOpcodeLand);
+            this.groupBoxOpcode.Controls.Add(this.label8);
+            this.groupBoxOpcode.Controls.Add(this.textBoxOpcodeWard);
+            this.groupBoxOpcode.Controls.Add(this.label7);
+            this.groupBoxOpcode.Location = new System.Drawing.Point(11, 86);
+            this.groupBoxOpcode.Name = "groupBoxOpcode";
+            this.groupBoxOpcode.Size = new System.Drawing.Size(307, 72);
+            this.groupBoxOpcode.TabIndex = 3;
+            this.groupBoxOpcode.TabStop = false;
+            this.groupBoxOpcode.Text = "Opcode";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(11, 21);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(101, 12);
+            this.label7.TabIndex = 0;
+            this.label7.Text = "房屋列表Opcode: ";
+            // 
+            // textBoxOpcodeWard
+            // 
+            this.textBoxOpcodeWard.Location = new System.Drawing.Point(120, 18);
+            this.textBoxOpcodeWard.Name = "textBoxOpcodeWard";
+            this.textBoxOpcodeWard.Size = new System.Drawing.Size(100, 21);
+            this.textBoxOpcodeWard.TabIndex = 1;
+            this.textBoxOpcodeWard.TextChanged += new System.EventHandler(this.textBoxOpcodeWard_TextChanged);
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(11, 45);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(101, 12);
+            this.label8.TabIndex = 2;
+            this.label8.Text = "房屋门牌Opcode: ";
+            // 
+            // textBoxOpcodeLand
+            // 
+            this.textBoxOpcodeLand.Location = new System.Drawing.Point(120, 41);
+            this.textBoxOpcodeLand.Name = "textBoxOpcodeLand";
+            this.textBoxOpcodeLand.Size = new System.Drawing.Size(100, 21);
+            this.textBoxOpcodeLand.TabIndex = 3;
+            this.textBoxOpcodeLand.TextChanged += new System.EventHandler(this.textBoxOpcodeLand_TextChanged);
+            // 
             // PluginControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -507,6 +626,9 @@ namespace HousingCheck
             this.groupBoxLog.PerformLayout();
             this.groupBoxControl.ResumeLayout(false);
             this.TabSetting.ResumeLayout(false);
+            this.TabSetting.PerformLayout();
+            this.groupBoxDebug.ResumeLayout(false);
+            this.groupBoxDebug.PerformLayout();
             this.groupBoxUpload.ResumeLayout(false);
             this.groupBoxUpload.PerformLayout();
             this.groupBoxNotify.ResumeLayout(false);
@@ -516,6 +638,8 @@ namespace HousingCheck
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownNotifyCheck)).EndInit();
             this.groupBoxNotifyHouse.ResumeLayout(false);
             this.groupBoxNotifyHouse.PerformLayout();
+            this.groupBoxOpcode.ResumeLayout(false);
+            this.groupBoxOpcode.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -559,5 +683,15 @@ namespace HousingCheck
         public System.Windows.Forms.Button buttonCopyToClipboard;
         public System.Windows.Forms.Button buttonSaveToFile;
         public System.Windows.Forms.Button buttonUploadOnce;
+        private System.Windows.Forms.GroupBox groupBoxDebug;
+        private System.Windows.Forms.CheckBox checkBoxDisableOpcode;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.CheckBox checkBoxDebug;
+        private System.Windows.Forms.GroupBox groupBoxOpcode;
+        private System.Windows.Forms.TextBox textBoxOpcodeLand;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.TextBox textBoxOpcodeWard;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.CheckBox checkBoxUseCustomOpcode;
     }
 }
