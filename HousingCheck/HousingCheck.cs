@@ -35,8 +35,8 @@ namespace HousingCheck
         /// <summary>
         /// 国服版本5.55 Opcode
         /// </summary>
-        public const int OPCODE_WARD_INFO = 585;
-        public const int OPCODE_LAND_INFO = 0x136;
+        public const int OPCODE_WARD_INFO = 658;
+        public const int OPCODE_LAND_INFO = 730;
 
         /// <summary>
         /// 房屋列表，用于和控件双向绑定
