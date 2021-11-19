@@ -236,18 +236,6 @@ namespace HousingCheck
                 return;
 
             bool fallback = true;
-            if (control.EnableTTS)
-            {
-                ActGlobals.oFormActMain.TTS(
-                    string.Format("{0}{1}区{2}号{3}房",
-                        HousingItem.GetHouseAreaShortStr(onSaleItem.Area),
-                        onSaleItem.DisplaySlot,
-                        onSaleItem.DisplayId,
-                        onSaleItem.SizeStr
-                    )
-                );
-                fallback = false;
-            }
             if (control.EnableNotification)
             {
                 var title = string.Format("{0} 第{1}区 {2}号 {3}房",
@@ -260,6 +248,18 @@ namespace HousingCheck
                     .AddText("新空房")
                     .AddText(title)
                     .Show();
+                fallback = false;
+            }
+            if (control.EnableTTS)
+            {
+                ActGlobals.oFormActMain.TTS(
+                    string.Format("{0}{1}区{2}号{3}房",
+                        HousingItem.GetHouseAreaShortStr(onSaleItem.Area),
+                        onSaleItem.DisplaySlot,
+                        onSaleItem.DisplayId,
+                        onSaleItem.SizeStr
+                    )
+                );
                 fallback = false;
             }
             if (fallback)
@@ -732,7 +732,7 @@ namespace HousingCheck
             protected override WebRequest GetWebRequest(Uri uri)
             {
                 WebRequest w = base.GetWebRequest(uri);
-                w.Timeout = 30 * 1000; // 30s
+                w.Timeout = 60 * 1000; // 60s
                 return w;
             }
         }
