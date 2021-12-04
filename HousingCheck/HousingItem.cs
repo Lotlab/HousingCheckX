@@ -302,6 +302,9 @@ namespace HousingCheck
              */
             var nameHeader = buffer.SubArray(0, 8);
             Price = BitConverter.ToInt32(nameHeader, 0);
+            if (Price < 0 || Price > 100000000)
+                throw new ArgumentException($"数据解析错误: 价格{Price}不正确");
+
             Size = (Price > 30000000) ? HouseSize.L : ((Price > 10000000) ? HouseSize.M : HouseSize.S);
             //读取房屋信息
             Flags = new HouseFlags(nameHeader[4]);

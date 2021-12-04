@@ -710,10 +710,10 @@ namespace HousingCheck
 
         private void TickDoWorker(object sender, DoWorkEventArgs e)
         {
-            DateTime nextNotify = GetNextNotifyTime();
             DateTime lastNotify = DateTime.Now.AddSeconds(-1);
             while (!TickWorker.CancellationPending)
             {
+                DateTime nextNotify = GetNextNotifyTime();
                 if (DateTime.Now > nextNotify.AddSeconds(-control.CheckNotifyAheadTime))
                 {
                     if (lastNotify != nextNotify && control.EnableNotifyCheck)
@@ -721,7 +721,6 @@ namespace HousingCheck
                         NotifyCheckHouseAsnyc();
                         lastNotify = nextNotify;
                     }
-                    nextNotify = GetNextNotifyTime();
                 }
                 Thread.Sleep(1000);
             }
@@ -737,6 +736,8 @@ namespace HousingCheck
             }
         }
 
+        System.Reflection.AssemblyName assemblyName => System.Reflection.Assembly.GetExecutingAssembly().GetName();
+
         public bool UploadData(string type, string postContent, string mime = "application/json")
         {
             var wb = new CustomWebClient();
@@ -746,6 +747,7 @@ namespace HousingCheck
                 wb.Headers[HttpRequestHeader.Authorization] = "Token " + token;
             }
             wb.Headers[HttpRequestHeader.ContentType] = mime;
+            wb.Headers.Add(HttpRequestHeader.UserAgent, assemblyName.Name + "/" + assemblyName.Version);
 
             string url;
             switch (control.UploadApiVersion)
