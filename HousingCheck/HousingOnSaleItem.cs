@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace HousingCheck
 {
-    public class HousingOnSaleItem : IEquatable<HousingOnSaleItem>
+    public class HousingOnSaleItem : PropertyNotifier, IEquatable<HousingOnSaleItem>
     {
         public HousingOnSaleItem(HouseArea _area, int _slot, int _id, HouseSize _size, int _price, bool _status)
         {
@@ -114,18 +114,6 @@ namespace HousingCheck
                         && obj.Id == Id);
         }
 
-        public void Update(HousingItem item)
-        {
-            if(item.Area == Area
-                && item.Slot == Slot
-                && item.Id == Id)
-            {
-                Price = item.Price;
-                ExistenceTime = DateTime.Now;
-                CurrentStatus = item.IsEmpty;
-            }
-        }
-
         public void Update(HousingOnSaleItem item)
         {
             if (item.Area == Area
@@ -135,6 +123,10 @@ namespace HousingCheck
                 Price = item.Price;
                 ExistenceTime = DateTime.Now;
                 CurrentStatus = item.CurrentStatus;
+
+                OnPropertyChanged(nameof(Price));
+                OnPropertyChanged(nameof(ExistenceTime));
+                OnPropertyChanged(nameof(CurrentStatusStr));
             }
         }
     }

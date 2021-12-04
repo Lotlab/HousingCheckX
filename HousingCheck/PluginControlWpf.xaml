@@ -3,50 +3,158 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:HousingCheck"
+             xmlns:local="clr-namespace:HousingCheck" d:DataContext="{d:DesignInstance Type=local:PluginControlViewModel}"
              mc:Ignorable="d" 
-             d:DesignWidth="800" d:DesignHeight="350">
-    <DockPanel>
+             d:DesignWidth="800" d:DesignHeight="600">
+    
+    <DockPanel Background="White" >
         <!-- 右侧功能 -->
         <DockPanel DockPanel.Dock="Right" Width="360" Margin="0,8,10,8">
-            <StackPanel DockPanel.Dock="Top">
-                <GroupBox Header="上报设置" Padding="5,2">
-                    <StackPanel>
-                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
-                            <CheckBox Height="15.2">开启自动上报</CheckBox>
-                            <CheckBox Margin="12,0,0,0" Height="15.2">上报房区快照</CheckBox>
-                            <StackPanel Margin="12,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Label Padding="0,-1,0,0" VerticalAlignment="Center" Margin="0,-1,0,0">上报API版本：</Label>
-                                <ComboBox Width="50">
-                                    <ComboBoxItem>V1</ComboBoxItem>
-                                    <ComboBoxItem>V2</ComboBoxItem>
-                                </ComboBox>
-                            </StackPanel>
-                        </StackPanel>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition></RowDefinition>
-                                <RowDefinition></RowDefinition>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="80"></ColumnDefinition>
-                                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Row="0" Grid.Column="0">上报地址</Label>
-                            <TextBox Grid.Row="0" Grid.ColumnSpan="2" Margin="80,0,-257,0"/>
-                            <Label Grid.Row="1" Grid.Column="0">Token</Label>
-                            <TextBox Grid.ColumnSpan="2" Margin="80,25,-257,0" Grid.RowSpan="2"/>
-                        </Grid>
-                    </StackPanel>
-                </GroupBox>
-            </StackPanel>
-            <!-- Log区域 -->
+            <TabControl FontFamily="Microsoft YaHei UI" FontSize="12">
+                <TabItem Header="日志">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top">
+                            <GroupBox Header="操作">
+                                <Grid Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Margin="3" Click="UploadManaually">手动上报一次</Button>
+                                    <Button Grid.Column="1" Margin="3" Click="SaveToFile">保存到文件</Button>
+                                    <Button Grid.Column="2" Margin="3" Click="CopyToClipboard">复制到剪贴板</Button>
+                                </Grid>
+                            </GroupBox>
+                        </DockPanel>
+                        <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Logs}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Padding="0" Margin="0" TextWrapping="Wrap" Text="{Binding Mode=OneWay}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </TabItem>
+                <TabItem Header="设置">
+                    <StackPanel DockPanel.Dock="Top">
+                        <GroupBox Header="通知设置" Padding="5,2">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition></ColumnDefinition>
+                                        <ColumnDefinition Width="40px"></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                        <StackPanel Height="26px" VerticalAlignment="Center" Orientation="Horizontal">
+                                            <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableTTS}">语音播报</CheckBox>
+                                            <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableNotification}" Margin="10, 0, 0, 0">弹出通知 (Win8+)</CheckBox>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Click="TestNotification">测试</Button>
+                                </Grid>
 
+                                <GroupBox Header="空房通知" Padding="5,2">
+                                    <StackPanel Height="26px" VerticalAlignment="Center" Orientation="Horizontal">
+                                        <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableNotifyHouseS}">S房</CheckBox>
+                                        <CheckBox VerticalContentAlignment="Center" Margin="10, 0, 0, 0" IsChecked="True" IsEnabled="False">M/L房</CheckBox>
+                                    </StackPanel>
+                                </GroupBox>
+                                <GroupBox Header="查房提醒" Padding="5,2">
+                                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                        <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableNotifyCheck}">整点提醒</CheckBox>
+                                        <Label Margin="10, 0, 0, 0">提前时间:</Label>
+                                        <TextBox VerticalContentAlignment="Center" Width="40px" Margin="3, 0, 0, 0" InputScope="Number" Text="{Binding CheckNotifyAheadTime}"/>
+                                        <Label Margin="3, 0, 0, 0">(s)</Label>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="上报设置" Padding="5,2">
+                            <StackPanel>
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Margin="0, 0, 0, 5">
+                                    <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding AutoUpload}">自动上报</CheckBox>
+                                    <CheckBox Margin="10,0,0,0" VerticalContentAlignment="Center" IsChecked="{Binding EnableUploadSnapshot}" IsEnabled="{Binding AutoUpload}">上报房区快照</CheckBox>
+                                    <StackPanel Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Label VerticalAlignment="Center">上报API版本：</Label>
+                                        <ComboBox Width="50" SelectedIndex="{Binding UploadApiVersion}">
+                                            <ComboBoxItem>V1</ComboBoxItem>
+                                            <ComboBoxItem>V2</ComboBoxItem>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition></RowDefinition>
+                                        <RowDefinition></RowDefinition>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="70"></ColumnDefinition>
+                                        <ColumnDefinition></ColumnDefinition>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0">上报地址:</Label>
+                                    <TextBox Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" Text="{Binding UploadUrl}" IsEnabled="{Binding AutoUpload}"/>
+                                    <Label Grid.Row="1" Grid.Column="0">Token:</Label>
+                                    <TextBox Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" Text="{Binding UploadToken}" IsEnabled="{Binding AutoUpload}"/>
+                                </Grid>
+                                <Label HorizontalAlignment="Right">如服务器未开启身份验证请留空</Label>
+                            </StackPanel>
+                        </GroupBox>
+                        <CheckBox Margin="5, 10, 0, 5" IsChecked="{Binding DebugEnabled}">启用调试设置</CheckBox>
+                        <GroupBox Header="调试设置" Padding="5,2" Visibility="{Binding DebugVisibility}">
+                            <StackPanel>
+                                <Label>修改调试设置可能会造成插件工作不正常，请谨慎修改。</Label>
+                                <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding DisableOpcodeCheck}">禁用Opcode过滤</CheckBox>
+                                <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding UseCustomOpcode}" IsEnabled="{Binding UseCustomOpcodeEditable}">使用自定义Opcode</CheckBox>
+                                <GroupBox Header="Opcode" Padding="5,2" IsEnabled="{Binding CustomOpcodeEditable}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120px"></ColumnDefinition>
+                                            <ColumnDefinition Width="40px"></ColumnDefinition>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition></RowDefinition>
+                                            <RowDefinition></RowDefinition>
+                                        </Grid.RowDefinitions>
+                                        <Label>房屋列表Opcode</Label>
+                                        <TextBox VerticalContentAlignment="Center" Grid.Column="1" InputScope="Number" Text="{Binding CustomOpcodeWard}"/>
+                                        <Label Grid.Row="1">房屋门牌Opcode</Label>
+                                        <TextBox VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"  InputScope="Number" Text="{Binding CustomOpcodeLand}"/>
+                                    </Grid>
+                                </GroupBox>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
         </DockPanel>
         <!-- 左侧房屋列表 -->
-        <GroupBox Header="房屋列表" Margin="10,8">
-            <DataGrid>
-
+        <GroupBox Header="房屋列表" Margin="10,8" FontFamily="Microsoft YaHei UI" FontSize="12">
+            <DataGrid Margin="0, 5, 0, 0" VerticalGridLinesBrush="Gray"  HorizontalGridLinesBrush="Gray" ItemsSource="{Binding Sales, Mode=OneWay}" AutoGenerateColumns="False" IsReadOnly="True" FontSize="12px">
+                <DataGrid.Columns >
+                    <DataGridTextColumn Width="3*" Header="住宅区" Binding="{Binding AreaStr}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="1*" Header="区" Binding="{Binding DisplaySlot}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="1*" Header="号" Binding="{Binding DisplayId}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="1*" Header="大小" Binding="{Binding SizeStr}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="2*" Header="价格" Binding="{Binding Price}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="3*" Header="首次记录时间" Binding="{Binding AddTime,StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="3*" Header="最后记录时间" Binding="{Binding ExistenceTime,StringFormat=\{0:yyyy-MM-dd HH:mm:ss\}}"></DataGridTextColumn>
+                    <DataGridTextColumn Width="2*" Header="当前状态" Binding="{Binding CurrentStatusStr}"></DataGridTextColumn>
+                </DataGrid.Columns>
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="3"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                    <Border Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                        <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </DataGrid.CellStyle>
             </DataGrid>
         </GroupBox>
     </DockPanel>

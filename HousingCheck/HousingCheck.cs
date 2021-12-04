@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Microsoft.Toolkit.Uwp.Notifications;
 using System.Collections.Concurrent;
+using System.Windows.Forms.Integration;
 
 public static class Extensions
 {
@@ -32,22 +33,6 @@ namespace HousingCheck
 
     public class HousingCheck : IActPluginV1
     {
-        /// <summary>
-        /// 国服版本5.55 Opcode
-        /// </summary>
-        public const int OPCODE_WARD_INFO = 658;
-        public const int OPCODE_LAND_INFO = 730;
-
-        /// <summary>
-        /// 房屋列表，用于和控件双向绑定
-        /// </summary>
-        public ObservableCollection<HousingOnSaleItem> HousingList = new ObservableCollection<HousingOnSaleItem>();
-
-        /// <summary>
-        /// 库啵，库啵啵？
-        /// </summary>
-        public BindingSource housingBindingSource;
-
         /// <summary>
         /// 插件对象
         /// </summary>
@@ -124,7 +109,9 @@ namespace HousingCheck
         /// 状态信息
         /// </summary>
         Label statusLabel;
-        PluginControl control;
+        PluginControlWpf control;
+        PluginControlViewModel vm;
+        Config config;
 
         private object GetFfxivPlugin()
         {
@@ -151,7 +138,7 @@ namespace HousingCheck
                 AutoSaveThread.CancelAsync();
                 LogQueueWorker.CancelAsync();
                 TickWorker.CancelAsync();
-                control.SaveSettings();
+                config.SaveSettings();
                 SaveHousingList();
                 statusLabel.Text = "Exit :|";
             }
@@ -165,18 +152,19 @@ namespace HousingCheck
         {
             statusLabel = pluginStatusText;
             GetFfxivPlugin();
-            control = new PluginControl();
+            control = new PluginControlWpf();
+            config = new Config();
+            config.LoadSettings();
+            vm = new PluginControlViewModel(config);
+            control.DataContext = vm;
             pluginScreenSpace.Text = "房屋信息记录";
-            housingBindingSource = new BindingSource { DataSource = HousingList };
-            control.dataGridView1.DataSource = housingBindingSource;
-            control.dataGridView1.UserDeletedRow += OnTableUpdated;
-            foreach (DataGridViewColumn col in control.dataGridView1.Columns)
+            var host = new ElementHost()
             {
-                col.SortMode = DataGridViewColumnSortMode.Automatic;
-            }
+                Dock = DockStyle.Fill,
+                Child = control
+            };
 
-            control.Dock = DockStyle.Fill;
-            pluginScreenSpace.Controls.Add(control);
+            pluginScreenSpace.Controls.Add(host);
 
             ffxivPlugin.DataSubscription.NetworkReceived += NetworkReceived;
 
@@ -201,12 +189,26 @@ namespace HousingCheck
             TickWorker.RunWorkerAsync();
 
             statusLabel.Text = "Working :D";
-            control.LoadSettings();
-            control.buttonUploadOnce.Click += ButtonUploadOnce_Click;
-            control.buttonCopyToClipboard.Click += ButtonCopyToClipboard_Click;
-            control.buttonSaveToFile.Click += ButtonSaveToFile_Click;
-            control.buttonNotifyTest.Click += ButtonNotifyTest_Click;
-            control.buttonNotifyCheckTest.Click += ButtonNotifyCheckTest_Click;
+            vm.OnInvoke += (arg) => {
+                switch (arg)
+                {
+                    case "UploadManaually":
+                        ButtonUploadOnce_Click(null, null);
+                        break;
+                    case "CopyToClipboard":
+                        ButtonCopyToClipboard_Click(null, null);
+                        break;
+                    case "SaveToFile":
+                        ButtonSaveToFile_Click(null, null);
+                        break;
+                    case "TestNotification":
+                        ButtonNotifyTest_Click(null, null);
+                        break;
+                    default:
+                        break;
+                }
+            };
+
             PrepareDir();
             //恢复上次列表
             LoadHousingList();
@@ -229,14 +231,14 @@ namespace HousingCheck
 
         void NotifyEmptyHouse(HousingOnSaleItem onSaleItem, bool exists)
         {
-            if (onSaleItem.Size == HouseSize.S && !control.EnableNotifyHouseS)
+            if (onSaleItem.Size == HouseSize.S && !config.EnableNotifyHouseS)
                 return;
 
-            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !control.EnableNotifyHouseML)
+            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !config.EnableNotifyHouseML)
                 return;
 
             bool fallback = true;
-            if (control.EnableNotification)
+            if (config.EnableNotification)
             {
                 var title = string.Format("{0} 第{1}区 {2}号 {3}房",
                         onSaleItem.AreaStr,
@@ -250,7 +252,7 @@ namespace HousingCheck
                     .Show();
                 fallback = false;
             }
-            if (control.EnableTTS)
+            if (config.EnableTTS)
             {
                 ActGlobals.oFormActMain.TTS(
                     string.Format("{0}{1}区{2}号{3}房",
@@ -280,12 +282,7 @@ namespace HousingCheck
         {
             var time = (DateTime.Now).ToString("HH:mm:ss");
             var text = $"[{time}] [{type}] {message.Trim()}";
-            control.BeginInvoke(new Action<string>((msg) =>
-            {
-                control.textBoxLog.AppendText(text + Environment.NewLine);
-                control.textBoxLog.SelectionStart = control.textBoxLog.TextLength;
-                control.textBoxLog.ScrollToCaret();
-            }), text);
+            vm.AddLog(text);
 
             //ActGlobals.oFormActMain.ParseRawLogLine(true, DateTime.Now, $"{text}");
             if (important)
@@ -303,7 +300,7 @@ namespace HousingCheck
         string HousingListToJson()
         {
             return JsonConvert.SerializeObject(
-                    HousingList.Where(x => x.CurrentStatus).ToArray()
+                    vm.Sales.Where(x => x.CurrentStatus).ToArray()
                 );
         }
 
@@ -312,22 +309,22 @@ namespace HousingCheck
             var opcode = BitConverter.ToUInt16(message, 18);
             if (message.Length == 2440)
             {
-                if (opcode == control.OpcodeWard || control.DisableOpcodeCheck)
+                if (opcode == config.OpcodeWard || config.DisableOpcodeCheck)
                 {
                     WardInfoParser(message);
                 }
-                if (opcode != control.OpcodeWard && control.DebugEnabled)
+                if (opcode != config.OpcodeWard && config.DebugEnabled)
                 {
                     Log("Debug", "房屋列表Opcode不匹配！可能的Opcode为：" + opcode);
                 }
             }
             if (message.Length == 312)
             {
-                if (opcode == control.OpcodeLand || control.DisableOpcodeCheck)
+                if (opcode == config.OpcodeLand || config.DisableOpcodeCheck)
                 {
                     LandInfoParser(message);
                 }
-                if (opcode != control.OpcodeLand && control.DebugEnabled)
+                if (opcode != config.OpcodeLand && config.DebugEnabled)
                 {
                     Log("Debug", "房屋门牌Opcode不匹配！可能的Opcode为：" + opcode);
                 }
@@ -351,7 +348,7 @@ namespace HousingCheck
                 var housingList = snapshot.HouseList;
 
                 // 过滤本区房屋列表
-                var oldOnSaleList = HousingList.Where(h => h.Area == snapshot.Area && h.Slot == snapshot.Slot);
+                var oldOnSaleList = vm.Sales.Where(h => h.Area == snapshot.Area && h.Slot == snapshot.Slot);
 
                 var removeList = new List<HousingOnSaleItem>();
 
@@ -409,8 +406,8 @@ namespace HousingCheck
                     snapshot.Slot + 1), true);     //输出翻页日志
 
                 //刷新UI
-                control.BeginInvoke(new Action<List<HousingOnSaleItem>>(UpdateTable), updatedHousingList);
-                control.BeginInvoke(new Action<IEnumerable<HousingOnSaleItem>>(removeTableItem), removeList);
+                vm.UpdateSales(updatedHousingList);
+                vm.RemoveSales(removeList);
             }
             catch (Exception ex)
             {
@@ -477,10 +474,7 @@ namespace HousingCheck
             try
             {
                 var list = JsonConvert.DeserializeObject<HousingOnSaleItem[]>(jsonStr);
-                foreach (var item in list)
-                {
-                    housingBindingSource.Add(item);
-                }
+                vm.UpdateSales(list);
                 Log("Info", "已恢复上次保存的房屋列表");
             }
             catch (Exception ex)
@@ -518,7 +512,7 @@ namespace HousingCheck
         {
             ArrayList area = new ArrayList(new string[] { "海雾村", "薰衣草苗圃", "高脚孤丘", "白银乡" });
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (var line in HousingList)
+            foreach (var line in vm.Sales)
             {
                 if (!line.CurrentStatus)
                     continue;
@@ -548,39 +542,6 @@ namespace HousingCheck
             }
 
             return stringBuilder.ToString();
-        }
-
-        public void UpdateTable(List<HousingOnSaleItem> items)
-        {
-            foreach (HousingOnSaleItem item in items)
-            {
-                int listIndex;
-                if ((listIndex = HousingList.IndexOf(item)) != -1)
-                {
-                    (housingBindingSource[listIndex] as HousingOnSaleItem).Update(item);
-                }
-                else
-                {
-                    housingBindingSource.Add(item);
-                }
-            }
-            housingBindingSource.ResetBindings(false);
-        }
-
-        /// <summary>
-        /// 删除表格中的内容
-        /// </summary>
-        /// <param name="items"></param>
-        void removeTableItem(IEnumerable<HousingOnSaleItem> items)
-        {
-            foreach (var item in items)
-            {
-                if (HousingList.Contains(item))
-                {
-                    housingBindingSource.Remove(item);
-                }
-            }
-            housingBindingSource.ResetBindings(false);
         }
 
         private void OnTableUpdated(object sender, DataGridViewRowEventArgs e)
@@ -621,9 +582,9 @@ namespace HousingCheck
                 {
                     long actionTime = LastOperateTime + AutoSaveAfter;
                     int snapshotCount = WillUploadSnapshot.Count;
-                    bool autoUpload = control.upload;
-                    bool uploadSnapshot = control.EnableUploadSnapshot;
-                    ApiVersion apiVersion = control.UploadApiVersion;
+                    bool autoUpload = config.AutoUpload;
+                    bool uploadSnapshot = config.EnableUploadSnapshot;
+                    ApiVersion apiVersion = config.UploadApiVersion;
 
                     if (ManualUpload)
                     {
@@ -687,11 +648,11 @@ namespace HousingCheck
         /// </summary>
         private void NotifyCheckHouse()
         {
-            if (control.EnableTTS)
+            if (config.EnableTTS)
             {
                 ActGlobals.oFormActMain.TTS("查房提醒：该查房了");
             }
-            if (control.EnableNotification)
+            if (config.EnableNotification)
             {
                 new ToastContentBuilder()
                     .AddText("查房提醒")
@@ -714,9 +675,9 @@ namespace HousingCheck
             while (!TickWorker.CancellationPending)
             {
                 DateTime nextNotify = GetNextNotifyTime();
-                if (DateTime.Now > nextNotify.AddSeconds(-control.CheckNotifyAheadTime))
+                if (DateTime.Now > nextNotify.AddSeconds(-config.CheckNotifyAheadTime))
                 {
-                    if (lastNotify != nextNotify && control.EnableNotifyCheck)
+                    if (lastNotify != nextNotify && config.EnableNotifyCheck)
                     {
                         NotifyCheckHouseAsnyc();
                         lastNotify = nextNotify;
@@ -741,7 +702,7 @@ namespace HousingCheck
         public bool UploadData(string type, string postContent, string mime = "application/json")
         {
             var wb = new CustomWebClient();
-            var token = control.UploadToken.Trim();
+            var token = config.UploadToken.Trim();
             if (token != "")
             {
                 wb.Headers[HttpRequestHeader.Authorization] = "Token " + token;
@@ -750,14 +711,14 @@ namespace HousingCheck
             wb.Headers.Add(HttpRequestHeader.UserAgent, assemblyName.Name + "/" + assemblyName.Version);
 
             string url;
-            switch (control.UploadApiVersion)
+            switch (config.UploadApiVersion)
             {
                 case ApiVersion.V1:
-                    url = control.UploadUrl;
+                    url = config.UploadUrl;
                     break;
                 case ApiVersion.V2:
                 default:
-                    url = control.UploadUrl.TrimEnd('/') + "/" + type;
+                    url = config.UploadUrl.TrimEnd('/') + "/" + type;
                     break;
             }
 
@@ -812,7 +773,7 @@ namespace HousingCheck
             switch (apiVersion)
             {
                 case ApiVersion.V2:
-                    postContent = JsonConvert.SerializeObject(HousingList);
+                    postContent = JsonConvert.SerializeObject(vm.Sales);
                     break;
                 case ApiVersion.V1:
                     postContent = "text=" + WebUtility.UrlEncode(ListToString());
