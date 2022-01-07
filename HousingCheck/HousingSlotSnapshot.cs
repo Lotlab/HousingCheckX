@@ -61,8 +61,8 @@ namespace HousingCheck
                 case 0x281:
                     Area = HouseArea.白银乡;
                     break;
-                case 0x376: // ID 暂定
-                    Area = HouseArea.天穹街;
+                case 0x3D3:
+                    Area = HouseArea.穹顶皓天;
                     break;
                 default:
                     break;

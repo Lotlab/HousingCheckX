@@ -26,7 +26,7 @@ namespace HousingCheck
         薰衣草苗圃,
         白银乡,
         高脚孤丘,
-        天穹街 // 暂定名称
+        穹顶皓天
     }
 
     public enum HouseSize
@@ -195,8 +195,8 @@ namespace HousingCheck
                     return "高脚孤丘";
                 case HouseArea.白银乡:
                     return "白银乡";
-                case HouseArea.天穹街:
-                    return "天穹街";
+                case HouseArea.穹顶皓天:
+                    return "穹顶皓天";
                 default:
                     return "未知";
             }
@@ -213,7 +213,7 @@ namespace HousingCheck
                     return "沙";
                 case HouseArea.白银乡:
                     return "白";
-                case HouseArea.天穹街:
+                case HouseArea.穹顶皓天:
                     return "雪";
                 default:
                     return "未知";
@@ -233,7 +233,7 @@ namespace HousingCheck
                     return 2;
                 case HouseArea.白银乡:
                     return 3;
-                case HouseArea.天穹街:
+                case HouseArea.穹顶皓天:
                     return 4;
                 default:
                     return -1;

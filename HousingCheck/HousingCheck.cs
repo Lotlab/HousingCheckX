@@ -189,7 +189,8 @@ namespace HousingCheck
             TickWorker.RunWorkerAsync();
 
             statusLabel.Text = "Working :D";
-            vm.OnInvoke += (arg) => {
+            vm.OnInvoke += (arg) =>
+            {
                 switch (arg)
                 {
                     case "UploadManaually":
@@ -510,7 +511,7 @@ namespace HousingCheck
 
         private string ListToString()
         {
-            ArrayList area = new ArrayList(new string[] { "海雾村", "薰衣草苗圃", "高脚孤丘", "白银乡" });
+            byte area = 0;
             StringBuilder stringBuilder = new StringBuilder();
             foreach (var line in vm.Sales)
             {
@@ -519,26 +520,14 @@ namespace HousingCheck
 
                 stringBuilder.Append($"{line.AreaStr} 第{line.DisplaySlot}区 {line.DisplayId}号{line.SizeStr}房在售，当前价格:{line.Price} {Environment.NewLine}");
 
-                if (line.Area == HouseArea.海雾村 && area.IndexOf("海雾村") != -1)
-                {
-                    area.Remove("海雾村");
-                }
-                else if (line.Area == HouseArea.薰衣草苗圃 && area.IndexOf("薰衣草苗圃") != -1)
-                {
-                    area.Remove("薰衣草苗圃");
-                }
-                else if (line.Area == HouseArea.高脚孤丘 && area.IndexOf("高脚孤丘") != -1)
-                {
-                    area.Remove("高脚孤丘");
-                }
-                else if (line.Area == HouseArea.白银乡 && area.IndexOf("白银乡") != -1)
-                {
-                    area.Remove("白银乡");
-                }
+                if (line.Area >= 0) area |= (byte)(1 << (int)line.Area);
             }
-            foreach (var line in area)
+            for (int i = 1; i <= (int)HouseArea.穹顶皓天; i++)
             {
-                stringBuilder.Append($"{line} 无空房 {Environment.NewLine}");
+                if ((area & (1 << i)) == 0)
+                {
+                    stringBuilder.Append($"{HousingItem.GetHouseAreaStr((HouseArea)i)} 无空房 {Environment.NewLine}");
+                }
             }
 
             return stringBuilder.ToString();
@@ -625,7 +614,7 @@ namespace HousingCheck
                             }
                         }
                     }
-                } 
+                }
                 catch (Exception ex)
                 {
                     Log("Error", ex, "执行定时任务时出现错误");
