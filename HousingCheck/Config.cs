@@ -11,8 +11,8 @@ namespace HousingCheck
         /// <summary>
         /// 国服版本5.55 Opcode
         /// </summary>
-        public const int OPCODE_WARD_INFO = 658;
-        public const int OPCODE_LAND_INFO = 730;
+        public const int OPCODE_WARD_INFO = 426;
+        public const int OPCODE_LAND_INFO = 430;
 
         /// <summary>
         /// 上报API版本
