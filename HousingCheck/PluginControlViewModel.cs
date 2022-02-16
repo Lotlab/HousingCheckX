@@ -6,19 +6,20 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using Lotlab.PluginCommon;
 
 namespace HousingCheck
 {
     public class PluginControlViewModel : PropertyNotifier
     {
         Config config;
-        readonly object logsLock = new object();
+        SimpleLogger logger { get; }
         readonly object salesLock = new object();
-        public PluginControlViewModel(Config config)
+        public PluginControlViewModel(Config config, SimpleLogger logger)
         {
             this.config = config;
+            this.logger = logger;
 
-            BindingOperations.EnableCollectionSynchronization(Logs, logsLock);
             BindingOperations.EnableCollectionSynchronization(Sales, salesLock);
         }
         public int UploadApiVersion
@@ -39,7 +40,7 @@ namespace HousingCheck
         public bool EnableNotifyHouseS { get => config.EnableNotifyHouseS; set { config.EnableNotifyHouseS = value; OnPropertyChanged(); } }
         public bool EnableNotifyCheck { get => config.EnableNotifyCheck; set { config.EnableNotifyCheck = value; OnPropertyChanged(); } }
         public string CheckNotifyAheadTime { get => config.CheckNotifyAheadTime.ToString(); set { config.CheckNotifyAheadTime = int.Parse(value); OnPropertyChanged(); } }
-        public bool DebugEnabled { get => config.DebugEnabled; set { config.DebugEnabled = value; OnPropertyChanged(); OnPropertyChanged(nameof(DebugVisibility)); } }
+        public bool DebugEnabled { get => config.DebugEnabled; set { config.DebugEnabled = value; OnPropertyChanged(); logger.SetFilter(value ? LogLevel.DEBUG : LogLevel.INFO); OnPropertyChanged(nameof(DebugVisibility)); } }
         public bool DisableOpcodeCheck { get => config.DisableOpcodeCheck; set { config.DisableOpcodeCheck = value; OnPropertyChanged(); OnPropertyChanged(nameof(CustomOpcodeEditable)); OnPropertyChanged(nameof(UseCustomOpcodeEditable)); } }
         public bool UseCustomOpcode { get => config.UseCustomOpcode; set { config.UseCustomOpcode = value; OnPropertyChanged(); OnPropertyChanged(nameof(CustomOpcodeEditable)); } }
         public string CustomOpcodeWard { get => config.CustomOpcodeWard.ToString(); set { config.CustomOpcodeWard = int.Parse(value); OnPropertyChanged(); } }
@@ -50,17 +51,9 @@ namespace HousingCheck
         public bool CustomOpcodeEditable => UseCustomOpcode && !DisableOpcodeCheck;
         public bool UseCustomOpcodeEditable => !DisableOpcodeCheck;
 
-        public ObservableCollection<string> Logs { get; private set; } = new ObservableCollection<string>();
+        public ObservableCollection<LogItem> Logs => logger.ObserveLogs;
 
         public ObservableCollection<HousingOnSaleItem> Sales { get; private set; } = new ObservableCollection<HousingOnSaleItem>();
-
-        public void AddLog(string log)
-        {
-            lock (logsLock)
-            {
-                Logs.Add(log);
-            }
-        }
 
         public void UpdateSales(IEnumerable<HousingOnSaleItem> items)
         {

@@ -1,0 +1,3 @@
+[submodule "PluginCommon"]
+	path = PluginCommon
+	url = https://github.com/Lotlab/PluginCommon

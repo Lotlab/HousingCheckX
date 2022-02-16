@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
+using Lotlab.PluginCommon;
 
 namespace HousingCheck
 {

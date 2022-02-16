@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 using Newtonsoft.Json;
+using Lotlab.PluginCommon.FFXIV.Parser.Packets;
 
 namespace HousingCheck
 {
@@ -40,14 +41,10 @@ namespace HousingCheck
         /// </summary>
         public int LandID { get; } = 0;
 
-        public LandIdent(byte[] message)
+        public LandIdent(Lotlab.PluginCommon.FFXIV.Parser.Packets.LandIdent ident)
         {
-            LandID = BitConverter.ToUInt16(message, 0);
-            Slot = BitConverter.ToUInt16(message, 2);
-            var areaID = BitConverter.ToUInt16(message, 4);
-            ServerID = BitConverter.ToUInt16(message, 6);
-
-            switch (areaID)
+            ServerID = ident.worldId;
+            switch (ident.territoryTypeId)
             {
                 case 0x153:
                     Area = HouseArea.海雾村;
@@ -67,14 +64,24 @@ namespace HousingCheck
                 default:
                     break;
             }
+            Slot = ident.wardNum;
+            LandID = ident.landId;
         }
-    
+
         public LandIdent(int server, HouseArea area, int slot, int land = 0)
         {
             ServerID = server;
             Area = area;
             Slot = slot;
             LandID = land;
+        }
+
+        public LandIdent(LandIdent ident, int landID = 0)
+        {
+            ServerID = ident.ServerID;
+            Area = ident.Area;
+            Slot = ident.Slot;
+            LandID = landID;
         }
 
         bool IEquatable<LandIdent>.Equals(LandIdent other)
@@ -119,23 +126,15 @@ namespace HousingCheck
         public LandIdent landIdent { get; }
         public SortedList<int, HousingItem> HouseList = new SortedList<int, HousingItem>();
 
-        /// <summary>
-        /// 从buffer中解析房区信息
-        /// </summary>
-        /// <param name="message"></param>
-        public HousingSlotSnapshot(byte[] message)
+        public HousingSlotSnapshot(HousingWardInfo info)
         {
-            var time = message.SubArray(24, 4);
-            Time = DateTimeOffset.FromUnixTimeSeconds(BitConverter.ToInt32(time, 0)).LocalDateTime;
-            var dataList = message.SubArray(32, message.Length - 32);
-            var dataHeader = dataList.SubArray(0, 8);
-            landIdent = new LandIdent(dataHeader);
+            Time = DateTimeOffset.FromUnixTimeSeconds(info.Value.ipc.timestamp).LocalDateTime;
+            landIdent = new LandIdent(info.Value.landIdent);
 
-            for (int i = 8; i < dataList.Length; i += 40)
+            for (int i = 0; i < info.Value.houseInfoEntry.Length; i++)
             {
-                int houseId = (i - 8) / 40;
-                HousingItem house = new HousingItem(this, houseId, dataList.SubArray(i, 40));
-                HouseList.Add(houseId, house);
+                HousingItem house = new HousingItem(new LandIdent(landIdent, i), info.Value.houseInfoEntry[i]);
+                HouseList.Add(i, house);
             }
         }
 

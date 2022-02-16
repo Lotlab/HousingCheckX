@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Lotlab.PluginCommon.FFXIV.Parser.Packets;
+using Lotlab.PluginCommon.FFXIV.Parser;
 
 namespace HousingCheck
 {
@@ -24,52 +26,22 @@ namespace HousingCheck
         public string FcTag { get; }
         public byte[] Tag { get; }
  
-        public HousingLandInfoSign(byte[] message)
+        public HousingLandInfoSign(LandInfoSign sign)
         {
-            /**
-             *   struct FFXIVIpcLandInfoSign : FFXIVIpcBasePacket< LandInfoSign >
-             *   {
-             *      Common::LandIdent landIdent;
-             *      uint64_t ownerId; // ither contentId or fcId
-             *      uint32_t unknow1;
-             *      uint8_t houseIconAdd;
-             *      uint8_t houseSize;
-             *      uint8_t houseType;
-             *      char estateName[23];
-             *      char estateGreeting[193];
-             *      char ownerName[31];
-             *      char fcTag[7];
-             *      uint8_t tag[3];
-             *   };
-             */
+            Time = DateTimeOffset.FromUnixTimeSeconds(sign.Value.ipc.timestamp).LocalDateTime;
+            LandIdent = new LandIdent(sign.Value.landIdent);
 
-            var time = message.SubArray(24, 4);
-            Time = DateTimeOffset.FromUnixTimeSeconds(BitConverter.ToInt32(time, 0)).LocalDateTime;
-            var msgBody = message.SubArray(32, message.Length - 32);
-            var dataHeader = msgBody.SubArray(0, 8);
-            LandIdent = new LandIdent(dataHeader);
+            OwnerID =  sign.Value.ownerId;
 
-            var offset = 8;
-            OwnerID = BitConverter.ToUInt64(msgBody, offset);
-            offset += sizeof(UInt64);
+            HouseIconAdd = sign.Value.houseIconAdd; // 01: ?
+            HouseSize = (HouseSize)sign.Value.houseSize;// 00: S, 01: M, 02: L
+            HouseType = sign.Value.houseType == 2 ? HouseOwnerType.PERSON : HouseOwnerType.GUILD; // 00: FC, 02: Personal
 
-            offset += sizeof(UInt32); // Unknown1
-
-            HouseIconAdd = msgBody[offset++]; // 01: ?
-            byte houseSize = msgBody[offset++]; // 00: S, 01: M, 02: L
-            HouseSize = (HouseSize)houseSize;
-            byte houseType = msgBody[offset++]; // 00: FC, 02: Personal
-            HouseType = houseType == 2 ? HouseOwnerType.PERSON : HouseOwnerType.GUILD;
-
-            EstateName = HousingItem.DecodeOwnerName(msgBody.SubArray(offset, 23));
-            offset += 23;
-            EstateGreeting = HousingItem.DecodeOwnerName(msgBody.SubArray(offset, 193));
-            offset += 193;
-            OwnerName = HousingItem.DecodeOwnerName(msgBody.SubArray(offset, 31));
-            offset += 31;
-            FcTag = HousingItem.DecodeOwnerName(msgBody.SubArray(offset, 7));
-            offset += 7;
-            Tag = msgBody.SubArray(offset, 3);
+            EstateName = sign.Value.estateName.GetUTF8String();
+            EstateGreeting = sign.Value.estateGreeting.GetUTF8String();
+            OwnerName = sign.Value.ownerName.GetUTF8String();
+            FcTag = sign.Value.fcTag.GetUTF8String();
+            Tag = sign.Value.tag;
         }
 
         /// <summary>

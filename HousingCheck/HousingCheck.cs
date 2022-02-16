@@ -5,7 +5,6 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using Advanced_Combat_Tracker;
-using FFXIV_ACT_Plugin.Common;
 using System.Net;
 using System.Threading;
 using System.ComponentModel;
@@ -16,6 +15,10 @@ using Newtonsoft.Json;
 using Microsoft.Toolkit.Uwp.Notifications;
 using System.Collections.Concurrent;
 using System.Windows.Forms.Integration;
+using Lotlab.PluginCommon.FFXIV.Parser.Packets;
+using Lotlab.PluginCommon.FFXIV.Parser;
+using Lotlab.PluginCommon.FFXIV;
+using Lotlab.PluginCommon;
 
 public static class Extensions
 {
@@ -36,7 +39,7 @@ namespace HousingCheck
         /// <summary>
         /// 插件对象
         /// </summary>
-        FFXIV_ACT_Plugin.FFXIV_ACT_Plugin ffxivPlugin;
+        ACTPluginProxy ffxivPlugin;
 
         List<(DateTime, string)> LogQueue = new List<(DateTime, string)>();
 
@@ -112,23 +115,8 @@ namespace HousingCheck
         PluginControlWpf control;
         PluginControlViewModel vm;
         Config config;
-
-        private object GetFfxivPlugin()
-        {
-            ffxivPlugin = null;
-
-            var plugins = ActGlobals.oFormActMain.ActPlugins;
-
-            foreach (var plugin in plugins)
-                if (plugin.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_Plugin".ToUpper()) &&
-                    plugin.lblPluginStatus.Text.ToUpper().Contains("FFXIV Plugin Started.".ToUpper()))
-                    ffxivPlugin = (FFXIV_ACT_Plugin.FFXIV_ACT_Plugin)plugin.pluginObj;
-
-            if (ffxivPlugin == null)
-                throw new Exception("Could not find FFXIV plugin. Make sure that it is loaded before HousingCheck.");
-
-            return ffxivPlugin;
-        }
+        SimpleLoggerSync logger;
+        NetworkParser parser = new NetworkParser();
 
         void IActPluginV1.DeInitPlugin()
         {
@@ -140,6 +128,7 @@ namespace HousingCheck
                 TickWorker.CancelAsync();
                 config.SaveSettings();
                 SaveHousingList();
+                logger = null;
                 statusLabel.Text = "Exit :|";
             }
             else
@@ -151,11 +140,32 @@ namespace HousingCheck
         void IActPluginV1.InitPlugin(TabPage pluginScreenSpace, Label pluginStatusText)
         {
             statusLabel = pluginStatusText;
-            GetFfxivPlugin();
-            control = new PluginControlWpf();
+
+            var plugins = ActGlobals.oFormActMain.ActPlugins;
+            foreach (var item in plugins)
+            {
+                if (item.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_PLUGIN") && item.pluginObj != null)
+                {
+                    ffxivPlugin = new ACTPluginProxy(item.pluginObj);
+                }
+            }
+
+            if (ffxivPlugin == null)
+            {
+                pluginStatusText.Text = "FFXIV Act Plugin is not loading.";
+                return;
+            }
+
             config = new Config();
             config.LoadSettings();
-            vm = new PluginControlViewModel(config);
+
+            logger = new SimpleLoggerSync(Path.Combine(DataDir, "app.log"));
+            vm = new PluginControlViewModel(config, logger);
+
+            parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
+            parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
+
+            control = new PluginControlWpf();
             control.DataContext = vm;
             pluginScreenSpace.Text = "房屋信息记录";
             var host = new ElementHost()
@@ -203,7 +213,7 @@ namespace HousingCheck
                         ButtonSaveToFile_Click(null, null);
                         break;
                     case "TestNotification":
-                        ButtonNotifyTest_Click(null, null);
+                        NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false), false);
                         break;
                     default:
                         break;
@@ -213,16 +223,6 @@ namespace HousingCheck
             PrepareDir();
             //恢复上次列表
             LoadHousingList();
-        }
-
-        private void ButtonNotifyCheckTest_Click(object sender, EventArgs e)
-        {
-            NotifyCheckHouseAsnyc();
-        }
-
-        private void ButtonNotifyTest_Click(object sender, EventArgs e)
-        {
-            NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false), false);
         }
 
         void NotifyEmptyHouseAsync(HousingOnSaleItem onSaleItem, bool exists)
@@ -279,67 +279,61 @@ namespace HousingCheck
             Console.Beep(3000, 1000);
         }
 
-        void Log(string type, string message, bool important = false)
+        void WriteActLog(string message)
         {
-            var time = (DateTime.Now).ToString("HH:mm:ss");
-            var text = $"[{time}] [{type}] {message.Trim()}";
-            vm.AddLog(text);
-
-            //ActGlobals.oFormActMain.ParseRawLogLine(true, DateTime.Now, $"{text}");
-            if (important)
-            {
-                var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
-                LogQueue.Add((DateTime.Now, logText));
-            }
-        }
-
-        void Log(string type, Exception ex, string msg = "")
-        {
-            Log(type, msg + ex.ToString(), false);
+            var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
+            LogQueue.Add((DateTime.Now, logText));
         }
 
         string HousingListToJson()
         {
             return JsonConvert.SerializeObject(
-                    vm.Sales.Where(x => x.CurrentStatus).ToArray()
-                );
+                vm.Sales.Where(x => x.CurrentStatus).ToArray()
+            );
         }
 
         void NetworkReceived(string connection, long epoch, byte[] message)
         {
-            var opcode = BitConverter.ToUInt16(message, 18);
-            if (message.Length == 2440)
+            var packet = parser.ParsePacket(message);
+            switch (packet)
             {
-                if (opcode == config.OpcodeWard || config.DisableOpcodeCheck)
-                {
-                    WardInfoParser(message);
-                }
-                if (opcode != config.OpcodeWard && config.DebugEnabled)
-                {
-                    Log("Debug", "房屋列表Opcode不匹配！可能的Opcode为：" + opcode);
-                }
-            }
-            if (message.Length == 312)
-            {
-                if (opcode == config.OpcodeLand || config.DisableOpcodeCheck)
-                {
-                    LandInfoParser(message);
-                }
-                if (opcode != config.OpcodeLand && config.DebugEnabled)
-                {
-                    Log("Debug", "房屋门牌Opcode不匹配！可能的Opcode为：" + opcode);
-                }
+                case HousingWardInfo ward:
+                    WardInfoParser(ward);
+                    break;
+                case LandInfoSign land:
+                    LandInfoParser(land);
+                    break;
+                default:
+                    if (config.DebugEnabled)
+                    {
+                        var ipc = parser.ParseIPCHeader(message);
+                        var size = ipc.Value.segmentHeader.size;
+                        var guessOpcode = ipc.Value.type;
+                        if (size == 2440)
+                        {
+                            logger.LogDebug("房屋列表Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            if (config.DisableOpcodeCheck)
+                                WardInfoParser(parser.ParseAsPacket<HousingWardInfo, FFXIVIpcHousingWardInfo>(message));
+                        }
+                        else if (size == 312)
+                        {
+                            logger.LogDebug("房屋门牌Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            if (config.DisableOpcodeCheck)
+                                LandInfoParser(parser.ParseAsPacket<LandInfoSign, FFXIVIpcLandInfoSign>(message));
+                        }
+                    }
+                    break;
             }
         }
 
-        void WardInfoParser(byte[] message)
+        void WardInfoParser(HousingWardInfo info)
         {
             HousingSlotSnapshot snapshot;
             List<HousingOnSaleItem> updatedHousingList = new List<HousingOnSaleItem>();
             try
             {
                 //解析数据包
-                snapshot = new HousingSlotSnapshot(message);
+                snapshot = new HousingSlotSnapshot(info);
                 //存入存储
                 SnapshotStorage.Insert(snapshot);
                 WillUploadSnapshot[new Tuple<HouseArea, int>(snapshot.Area, snapshot.Slot)] = snapshot;
@@ -374,9 +368,11 @@ namespace HousingCheck
 
                     if (house.IsEmpty)
                     {
-                        Log("Info", string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
+                        var str = string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
                             onSaleItem.AreaStr, onSaleItem.DisplaySlot, onSaleItem.DisplayId,
-                            onSaleItem.SizeStr, onSaleItem.Price), true);
+                            onSaleItem.SizeStr, onSaleItem.Price);
+                        logger.LogInfo(str);
+                        WriteActLog(str);
 
                         NotifyEmptyHouseAsync(onSaleItem, isExists);
                         if (!isExists)
@@ -386,7 +382,7 @@ namespace HousingCheck
                         }
                         else
                         {
-                            Log("Info", "重复土地，已更新。");
+                            logger.LogInfo("重复土地，已更新。");
                         }
 
                         var signInfo = new HousingLandInfoSign(snapshot.ServerId, house.Area, house.Slot, house.Id, snapshot.Time, house.Size);
@@ -402,9 +398,12 @@ namespace HousingCheck
 
                 LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
 
-                Log("Info", string.Format("{0} 第{1}区查询完成",
+                // 输出翻页日志
+                var logStr = string.Format("{0} 第{1}区查询完成",
                     HousingItem.GetHouseAreaStr(snapshot.Area),
-                    snapshot.Slot + 1), true);     //输出翻页日志
+                    snapshot.Slot + 1);
+                logger.LogInfo(logStr);
+                WriteActLog(logStr);
 
                 //刷新UI
                 vm.UpdateSales(updatedHousingList);
@@ -412,16 +411,15 @@ namespace HousingCheck
             }
             catch (Exception ex)
             {
-                Log("Error", ex, "查询房屋列表出错：");
-                return;
+                logger.LogError("信息解析失败：" + ex.ToString());
             }
         }
 
-        void LandInfoParser(byte[] message)
+        void LandInfoParser(LandInfoSign sign)
         {
             try
             {
-                var info = new HousingLandInfoSign(message);
+                var info = new HousingLandInfoSign(sign);
                 LandInfoSignStorage.Add(info);
                 LandInfoUpdated = true;
 
@@ -429,20 +427,20 @@ namespace HousingCheck
             }
             catch (Exception e)
             {
-                Log("Error", e, "查询房屋信息出错：");
+                logger.LogError("信息解析失败：" + e.ToString());
             }
         }
 
         private void ButtonUploadOnce_Click(object sender, EventArgs e)
         {
-            Log("Info", $"准备上报");
+            logger.LogInfo($"准备上报");
             ManualUpload = true;
         }
 
         private void ButtonCopyToClipboard_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(ListToString());
-            Log("Info", $"复制成功");
+            logger.LogInfo($"复制成功");
         }
 
         private void PrepareDir()
@@ -462,7 +460,7 @@ namespace HousingCheck
             StreamWriter writer = new StreamWriter(savePath, false, Encoding.UTF8);
             writer.Write(HousingListToJson());
             writer.Close();
-            Log("Info", $"房屋列表已保存到{savePath}");
+            logger.LogInfo($"房屋列表已保存到{savePath}");
         }
 
         private void LoadHousingList()
@@ -476,14 +474,16 @@ namespace HousingCheck
             {
                 var list = JsonConvert.DeserializeObject<HousingOnSaleItem[]>(jsonStr);
                 vm.UpdateSales(list);
-                Log("Info", "已恢复上次保存的房屋列表");
+                logger.LogInfo("已恢复上次保存的房屋列表");
             }
             catch (Exception ex)
             {
-                Log("Error", ex, "恢复上次保存的房屋列表失败：");
+                logger.LogError("恢复上次保存的房屋列表失败：" + ex.Message);
             }
             reader.Close();
         }
+
+        string DataDir => Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck", "snapshots");
 
         private void ButtonSaveToFile_Click(object sender, EventArgs e)
         {
@@ -491,7 +491,7 @@ namespace HousingCheck
             string time = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string snapshotFilename = $"HousingCheck-{time}-Snapshot.csv";
             string landInfoFilename = $"HousingCheck-{time}-LandInfo.csv";
-            string saveDir = Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck", "snapshots");
+            string saveDir = Path.Combine(DataDir, "snapshots");
 
             using (var writer = new StreamWriter(Path.Combine(saveDir, snapshotFilename), false, Encoding.UTF8))
             {
@@ -506,7 +506,7 @@ namespace HousingCheck
                 }
             }
 
-            Log("Info", $"已保存到 {saveDir} 文件夹");
+            logger.LogInfo($"已保存到 {saveDir} 文件夹");
         }
 
         private string ListToString()
@@ -577,7 +577,7 @@ namespace HousingCheck
 
                     if (ManualUpload)
                     {
-                        Log("Debug", "手动开始上报");
+                        logger.LogDebug("手动开始上报");
                         UploadOnSaleList(apiVersion);
                         HousingListUpdated = false;
                         LandInfoUpdated = false;
@@ -591,7 +591,7 @@ namespace HousingCheck
                                 UploadLandInfoSnapshot();
                         }
                         ManualUpload = false;
-                        Log("Debug", "手动上报任务执行完毕");
+                        logger.LogDebug("手动上报任务执行完毕");
                     }
                     else if (actionTime <= new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds())
                     {
@@ -599,7 +599,7 @@ namespace HousingCheck
                         {
                             //保存列表文件
                             SaveHousingList();
-                            Log("Info", "房屋信息已保存");
+                            logger.LogInfo("房屋信息已保存");
                             if (autoUpload) UploadOnSaleList(apiVersion);
 
                             HousingListUpdated = false;
@@ -617,13 +617,13 @@ namespace HousingCheck
                 }
                 catch (Exception ex)
                 {
-                    Log("Error", ex, "执行定时任务时出现错误");
+                    logger.LogError("执行定时任务时出现错误: " + ex.Message);
                 }
 
                 Thread.Sleep(500);
             }
 
-            Log("Error", "上报线程退出！！！！");
+            logger.LogError("上报线程退出！！！！");
         }
 
         private DateTime GetNextNotifyTime()
@@ -732,7 +732,7 @@ namespace HousingCheck
                         }
                         else
                         {
-                            Log("Error", "上传出错：" + jsonRes["errorMessage"]);
+                            logger.LogError("上传出错：" + jsonRes["errorMessage"]);
                         }
                     }
                     else
@@ -743,14 +743,14 @@ namespace HousingCheck
                         }
                         else
                         {
-                            Log("Error", "上传出错：" + res);
+                            logger.LogError("上传出错：" + res);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log("Error", ex, "上传出错：");
+                logger.LogError("上传出错：" + ex.Message);
             }
             return false;
         }
@@ -771,15 +771,15 @@ namespace HousingCheck
             }
             if (postContent.Length == 0)
             {
-                Log("Error", "上报数据为空");
+                logger.LogError("上报数据为空");
             }
             //Log("Debug", postContent);
-            Log("Info", "正在上传空房列表");
+            logger.LogInfo("正在上传房屋列表");
             bool res = UploadData("info", postContent, mime);
 
             if (res)
             {
-                Log("Info", "房屋列表上报成功");
+                logger.LogInfo("房屋列表上报成功");
             }
             else
             {
@@ -801,11 +801,11 @@ namespace HousingCheck
                 }
                 string json = JsonConvert.SerializeObject(snapshotJSONObjects);
                 SnapshotUpdated = false;
-                Log("Info", "正在上传房区快照");
+                logger.LogInfo("正在上传房区快照");
                 bool res = UploadData("info", json);
                 if (res)
                 {
-                    Log("Info", "房区快照上报成功");
+                    logger.LogInfo("房区快照上报成功");
                 }
                 else
                 {
@@ -814,7 +814,7 @@ namespace HousingCheck
             }
             catch (Exception ex)
             {
-                Log("Error", ex, "房区快照上报出错：");
+                logger.LogError("房区快照上报出错：" + ex.Message);
             }
             //Log("Info", $"上报消息给 {post_url}");
         }
@@ -826,11 +826,11 @@ namespace HousingCheck
                 var objs = LandInfoSignStorage.ToJsonObj();
                 LandInfoUpdated = false;
                 string json = JsonConvert.SerializeObject(objs);
-                Log("Info", "正在上传房屋详细信息");
+                logger.LogInfo("正在上传房屋详细信息");
                 bool res = UploadData("detail", json);
                 if (res)
                 {
-                    Log("Info", "房屋详细信息上报成功");
+                    logger.LogInfo("房屋详细信息上报成功");
                     // 标记过时数据以防止重复上报
                     LandInfoSignStorage.MarkOutdated(DateTime.Now);
                 }
@@ -841,7 +841,7 @@ namespace HousingCheck
             }
             catch (Exception ex)
             {
-                Log("Error", ex, "房屋详细信息上报出错：");
+                logger.LogError("房屋详细信息上报出错：" + ex.Message);
             }
         }
     }

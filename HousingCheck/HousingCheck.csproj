@@ -1,121 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{09CF833E-9688-47F5-A9BF-881AC318CC80}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>HousingCheck</RootNamespace>
     <AssemblyName>HousingCheck</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <TargetFramework>net472</TargetFramework>
+    <Version>1.6.1</Version>
+    <Copyright>Copyright ©2021 Bluefissure, Hyperzlib. Copyright ©2021-2022 Lotlab</Copyright>
+    <ILMergeDebugInfo>false</ILMergeDebugInfo>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <RunPostBuildEvent>Always</RunPostBuildEvent>
-  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ReferencePath>
+      <CopyLocal>false</CopyLocal>
+    </ReferencePath>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="Advanced Combat Tracker">
       <HintPath>..\..\..\..\SDK\ACT\ACTv3\Advanced Combat Tracker.exe</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="FFXIV_ACT_Plugin">
-      <HintPath>..\lib\FFXIV_ACT_Plugin.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Common">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Config">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Config.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.LogFile">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.LogFile.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Memory">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Memory.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Network">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Network.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Overlay">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Overlay.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Parse">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Parse.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="FFXIV_ACT_Plugin.Resource">
-      <HintPath>..\lib\SDK\FFXIV_ACT_Plugin.Resource.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.IO.Compression.FileSystem" />
-    <Reference Include="System.Numerics" />
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Controls.Ribbon" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
     <Reference Include="WindowsFormsIntegration" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Config.cs" />
-    <Compile Include="HousingCheck.cs" />
-    <Compile Include="HousingLandInfoSign.cs" />
-    <Compile Include="HousingOnSaleItem.cs" />
-    <Compile Include="HousingItem.cs" />
-    <Compile Include="HousingSlotSnapshot.cs" />
-    <Compile Include="HousingSnapshotStorage.cs" />
-    <Compile Include="PluginControlViewModel.cs" />
-    <Compile Include="PluginControlWpf.xaml.cs">
-      <DependentUpon>PluginControlWpf.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PropertyNotifier.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Properties\DataSources\Extensions.datasource" />
-    <None Include="Properties\DataSources\HousingCheck.datasource" />
-    <None Include="Properties\DataSources\PluginControl.datasource" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="PluginControlWpf.xaml">
@@ -125,20 +34,22 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Costura.Fody">
-      <Version>5.4.0</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <Version>5.7.0</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications">
-      <Version>7.0.2</Version>
+      <Version>7.1.2</Version>
+    </PackageReference>
+    <PackageReference Include="MSBuild.ILMerge.Task">
+      <Version>1.1.3</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PluginCommon\PluginCommon.FFXIV\Lotlab.PluginCommon.FFXIV.csproj" />
+    <ProjectReference Include="..\PluginCommon\PluginCommon.WPF\Lotlab.PluginCommon.WPF.csproj" />
+    <ProjectReference Include="..\PluginCommon\PluginCommon\Lotlab.PluginCommon.csproj" />
+  </ItemGroup>
 </Project>

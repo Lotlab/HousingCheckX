@@ -6,7 +6,12 @@
              xmlns:local="clr-namespace:HousingCheck" d:DataContext="{d:DesignInstance Type=local:PluginControlViewModel}"
              mc:Ignorable="d" 
              d:DesignWidth="800" d:DesignHeight="600">
-    
+
+
+    <UserControl.Resources>
+        <local:LogItemToStringValueConverter x:Key="LogItemToStringValueConverter"/>
+    </UserControl.Resources>
+
     <DockPanel Background="White" >
         <!-- 右侧功能 -->
         <DockPanel DockPanel.Dock="Right" Width="360" Margin="0,8,10,8">
@@ -30,7 +35,7 @@
                         <ListBox ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding Logs}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Padding="0" Margin="0" TextWrapping="Wrap" Text="{Binding Mode=OneWay}"/>
+                                    <TextBlock Padding="0" Margin="0" TextWrapping="Wrap" Text="{Binding Mode=OneWay, Converter={StaticResource LogItemToStringValueConverter}}"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lotlab.PluginCommon.FFXIV.Parser;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -78,7 +79,7 @@ namespace HousingCheck
         }
     }
 
-    public enum HouseTagsDefine: byte
+    public enum HouseTagsDefine : byte
     {
         None = 0,
         Emporium = 1,
@@ -117,28 +118,16 @@ namespace HousingCheck
 
     public class HousingItem
     {
-        public HousingSlotSnapshot Snapshot;
+        public LandIdent LandIdent { get; }
 
-        public HouseArea Area
-        {
-            get
-            {
-                return Snapshot.Area;
-            }
-        }
+        public HouseArea Area => LandIdent.Area;
 
-        public int Slot
-        {
-            get
-            {
-                return Snapshot.Slot;
-            }
-        }
+        public int Slot => LandIdent.Slot;
 
         /// <summary>
         /// 房屋id
         /// </summary>
-        public int Id;
+        public int Id => LandIdent.LandID;
 
         /// <summary>
         /// 所有者
@@ -165,13 +154,7 @@ namespace HousingCheck
         /// </summary>
         public HouseOwnerType OwnerType;
 
-        public bool IsEmpty
-        {
-            get
-            {
-                return OwnerType == HouseOwnerType.EMPTY;
-            }
-        }
+        public bool IsEmpty => OwnerType == HouseOwnerType.EMPTY;
 
         /// <summary>
         /// 访客权限
@@ -270,52 +253,23 @@ namespace HousingCheck
             }
         }
 
-        public static string DecodeOwnerName(byte[] buffer)
-        {
-            int i;
-            for(i = 0; i < buffer.Length; i++)
-            {
-                if (buffer[i] == 0)
-                    break;
-            }
-            return Encoding.UTF8.GetString(buffer.SubArray(0, i));
-        }
-
         public HousingItem() { }
 
-        /// <summary>
-        /// 通过数据包获取房屋信息
-        /// </summary>
-        /// <param name="buffer">数据包Buffer</param>
-        public HousingItem(HousingSlotSnapshot snapshot, int id, byte[] buffer)
+        public HousingItem(LandIdent ident, Lotlab.PluginCommon.FFXIV.Parser.Packets.FFXIVIpcHousingWardInfo.HouseInfoEntry entry)
         {
-            Snapshot = snapshot;
-            Id = id;
-            /*
-             * struct HouseInfoEntry
-             * {
-             *   uint32_t housePrice;
-             *   uint8_t infoFlags;
-             *   Common::HousingAppeal houseAppeal[3];
-             *   char estateOwnerName[32];
-             * }
-             */
-            var nameHeader = buffer.SubArray(0, 8);
-            Price = BitConverter.ToInt32(nameHeader, 0);
+            LandIdent = ident;
+            Price = (int)entry.housePrice;
             if (Price < 0 || Price > 100000000)
                 throw new ArgumentException($"数据解析错误: 价格{Price}不正确");
 
             Size = (Price > 30000000) ? HouseSize.L : ((Price > 10000000) ? HouseSize.M : HouseSize.S);
-            //读取房屋信息
-            Flags = new HouseFlags(nameHeader[4]);
+            Flags = new HouseFlags(entry.infoFlags);
             //读取房屋展示信息
-            for(var i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
-                Tags[i] = (HouseTagsDefine)nameHeader[5 + i];
+                Tags[i] = (HouseTagsDefine)entry.houseAppeal[i];
             }
-            //读取房主姓名
-            Owner = DecodeOwnerName(buffer.SubArray(8, 32));
-            //获取所有者信息
+            Owner = entry.estateOwnerName.GetUTF8String();
             if (Flags.IsEstateOwned)
             {
                 if (Flags.IsFreeCompanyEstate)
@@ -344,7 +298,7 @@ namespace HousingCheck
 
         public string ToCsvLine()
         {
-            return string.Join(",", new string[] { 
+            return string.Join(",", new string[] {
                 GetHouseAreaStr(Area),
                 (Slot + 1) + "区" + (Id + 1) + "号",
                 GetOwnerTypeStr(OwnerType),
@@ -359,7 +313,7 @@ namespace HousingCheck
         {
             HousingItemJSONObject ret = new HousingItemJSONObject();
             int[] tags = new int[3];
-            for(var i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 tags[i] = (int)Tags[i];
             }
