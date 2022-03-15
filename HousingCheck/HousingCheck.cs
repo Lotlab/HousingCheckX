@@ -128,6 +128,7 @@ namespace HousingCheck
                 TickWorker.CancelAsync();
                 config.SaveSettings();
                 SaveHousingList();
+                logger.Close();
                 logger = null;
                 statusLabel.Text = "Exit :|";
             }
@@ -236,6 +237,9 @@ namespace HousingCheck
                 return;
 
             if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !config.EnableNotifyHouseML)
+                return;
+
+            if (onSaleItem.Area == HouseArea.穹顶皓天 && config.IgnoreEmpyreum)
                 return;
 
             bool fallback = true;
@@ -512,6 +516,9 @@ namespace HousingCheck
             foreach (var line in vm.Sales)
             {
                 if (!line.CurrentStatus)
+                    continue;
+
+                if (line.Area == HouseArea.穹顶皓天 && config.IgnoreEmpyreum)
                     continue;
 
                 stringBuilder.Append($"{line.AreaStr} 第{line.DisplaySlot}区 {line.DisplayId}号{line.SizeStr}房在售，当前价格:{line.Price} {Environment.NewLine}");

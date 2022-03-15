@@ -63,6 +63,7 @@
                                     <StackPanel Height="26px" VerticalAlignment="Center" Orientation="Horizontal">
                                         <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableNotifyHouseS}">S房</CheckBox>
                                         <CheckBox VerticalContentAlignment="Center" Margin="10, 0, 0, 0" IsChecked="True" IsEnabled="False">M/L房</CheckBox>
+                                        <CheckBox VerticalContentAlignment="Center" Margin="10, 0, 0, 0" IsChecked="{Binding IgnoreEmpyreum}">忽略穹顶皓天</CheckBox>
                                     </StackPanel>
                                 </GroupBox>
                                 <GroupBox Header="查房提醒" Padding="5,2">
