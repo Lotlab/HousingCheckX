@@ -445,17 +445,13 @@ namespace HousingCheck
 
         private void PrepareDir()
         {
-            string appdataPath = Path.Combine(Environment.CurrentDirectory, "AppData");
-            if (!Directory.Exists(appdataPath)) Directory.CreateDirectory(appdataPath);
-            string savingPath = Path.Combine(appdataPath, "HousingCheck");
-            if (!Directory.Exists(savingPath)) Directory.CreateDirectory(savingPath);
-            string snapshotPath = Path.Combine(savingPath, "snapshots");
-            if (!Directory.Exists(snapshotPath)) Directory.CreateDirectory(snapshotPath);
+            if (!Directory.Exists(SnapshotDir))
+                Directory.CreateDirectory(SnapshotDir);
         }
 
         private void SaveHousingList()
         {
-            string savePath = Path.Combine(new string[] { Environment.CurrentDirectory, "AppData", "HousingCheck", "list.json" });
+            string savePath = Path.Combine(DataDir, "list.json" );
 
             StreamWriter writer = new StreamWriter(savePath, false, Encoding.UTF8);
             writer.Write(HousingListToJson());
@@ -465,7 +461,7 @@ namespace HousingCheck
 
         private void LoadHousingList()
         {
-            string savePath = Path.Combine(new string[] { Environment.CurrentDirectory, "AppData", "HousingCheck", "list.json" });
+            string savePath = Path.Combine(DataDir, "list.json");
             if (!File.Exists(savePath)) return;
             StreamReader reader = new StreamReader(savePath, Encoding.UTF8);
             string jsonStr = reader.ReadToEnd();
@@ -483,7 +479,8 @@ namespace HousingCheck
             reader.Close();
         }
 
-        string DataDir => Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck", "snapshots");
+        string DataDir => Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck");
+        string SnapshotDir => Path.Combine(DataDir, "snapshots");
 
         private void ButtonSaveToFile_Click(object sender, EventArgs e)
         {
@@ -491,22 +488,21 @@ namespace HousingCheck
             string time = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string snapshotFilename = $"HousingCheck-{time}-Snapshot.csv";
             string landInfoFilename = $"HousingCheck-{time}-LandInfo.csv";
-            string saveDir = Path.Combine(DataDir, "snapshots");
 
-            using (var writer = new StreamWriter(Path.Combine(saveDir, snapshotFilename), false, Encoding.UTF8))
+            using (var writer = new StreamWriter(Path.Combine(SnapshotDir, snapshotFilename), false, Encoding.UTF8))
             {
                 SnapshotStorage.SaveCsv(writer);
             }
 
             if (LandInfoSignStorage.Count > 0)
             {
-                using (var writer = new StreamWriter(Path.Combine(saveDir, landInfoFilename), false, Encoding.UTF8))
+                using (var writer = new StreamWriter(Path.Combine(SnapshotDir, landInfoFilename), false, Encoding.UTF8))
                 {
                     LandInfoSignStorage.WriteCSV(writer);
                 }
             }
 
-            logger.LogInfo($"已保存到 {saveDir} 文件夹");
+            logger.LogInfo($"已保存到 {SnapshotDir} 文件夹");
         }
 
         private string ListToString()
