@@ -9,10 +9,10 @@ namespace HousingCheck
     public class Config
     {
         /// <summary>
-        /// 国服版本6.0 Opcode
+        /// 国服版本6.01 Opcode
         /// </summary>
-        public const int OPCODE_WARD_INFO = 192;
-        public const int OPCODE_LAND_INFO = 506;
+        public const int OPCODE_WARD_INFO = 520;
+        public const int OPCODE_LAND_INFO = 884;
 
         /// <summary>
         /// 上报API版本

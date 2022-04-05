@@ -338,6 +338,10 @@ namespace HousingCheck
             {
                 //解析数据包
                 snapshot = new HousingSlotSnapshot(info);
+
+                if (snapshot.ServerId == 0)
+                    return;
+                 
                 //存入存储
                 SnapshotStorage.Insert(snapshot);
                 WillUploadSnapshot[new Tuple<HouseArea, int>(snapshot.Area, snapshot.Slot)] = snapshot;
