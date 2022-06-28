@@ -15,6 +15,11 @@ namespace HousingCheck
         public int server;
         public string area;
         public int slot;
+        public int purchase_main;
+        public int purchase_sub;
+        public int region_main;
+        public int region_sub;
+
         public HousingItemJSONObject[] houses;
     }
 
@@ -124,12 +129,23 @@ namespace HousingCheck
         public HouseArea Area => landIdent.Area;
         public int Slot => landIdent.Slot;
         public LandIdent landIdent { get; }
+        public HousePurchaseType PurchaseTypeMain { get; }
+        public HousePurchaseType PurchaseTypeSub { get; }
+        public HouseRegionType RegionFlagMain { get; }
+        public HouseRegionType RegionFlagSub { get; }
+
         public SortedList<int, HousingItem> HouseList = new SortedList<int, HousingItem>();
 
         public HousingSlotSnapshot(HousingWardInfo info)
         {
             Time = DateTimeOffset.FromUnixTimeSeconds(info.Value.ipc.timestamp).LocalDateTime;
             landIdent = new LandIdent(info.Value.landIdent);
+
+            var purchaseType = info.Value.purchaseType;
+            PurchaseTypeMain = (HousePurchaseType)purchaseType[0];
+            PurchaseTypeSub = (HousePurchaseType)purchaseType[1];
+            RegionFlagMain = (HouseRegionType)purchaseType[2];
+            RegionFlagSub = (HouseRegionType)purchaseType[3];
 
             for (int i = 0; i < info.Value.houseInfoEntry.Length; i++)
             {
@@ -169,6 +185,11 @@ namespace HousingCheck
             ret.server = ServerId;
             ret.slot = Slot;
             ret.time = new DateTimeOffset(Time).ToUnixTimeSeconds();
+
+            ret.purchase_main = (int)PurchaseTypeMain;
+            ret.purchase_sub = (int)PurchaseTypeSub;
+            ret.region_main = (int)RegionFlagMain;
+            ret.region_sub = (int)RegionFlagSub;
 
             List<HousingItemJSONObject> houseListJson = new List<HousingItemJSONObject>();
             foreach(var house in HouseList.Values)

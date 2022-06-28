@@ -1,4 +1,5 @@
 ﻿using Lotlab.PluginCommon.FFXIV.Parser;
+using Lotlab.PluginCommon.FFXIV.Parser.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +46,19 @@ namespace HousingCheck
         EstateFlagUnknown = 8,
         IsFreeCompanyEstate = 16,
     };
+
+    public enum HousePurchaseType : byte
+    {
+        NotPurchasable, // 不可购买
+        FCFS, // 先到先得
+        Lottery // 抽选
+    }
+
+    public enum HouseRegionType : byte
+    {
+        FC = 1,
+        Personal = 2
+    }
 
     public struct HouseFlags
     {
@@ -255,7 +269,7 @@ namespace HousingCheck
 
         public HousingItem() { }
 
-        public HousingItem(LandIdent ident, Lotlab.PluginCommon.FFXIV.Parser.Packets.FFXIVIpcHousingWardInfo.HouseInfoEntry entry)
+        public HousingItem(LandIdent ident, FFXIVIpcHousingWardInfo.HouseInfoEntry entry)
         {
             LandIdent = ident;
             Price = (int)entry.housePrice;

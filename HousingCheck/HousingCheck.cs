@@ -19,6 +19,7 @@ using Lotlab.PluginCommon.FFXIV.Parser.Packets;
 using Lotlab.PluginCommon.FFXIV.Parser;
 using Lotlab.PluginCommon.FFXIV;
 using Lotlab.PluginCommon;
+using System.Runtime.InteropServices;
 
 public static class Extensions
 {
@@ -165,6 +166,7 @@ namespace HousingCheck
 
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
+            parser.SetOpcode<LandSaleInfo>((ushort)config.OpcodeSale);
 
             control = new PluginControlWpf();
             control.DataContext = vm;
@@ -307,23 +309,31 @@ namespace HousingCheck
                 case LandInfoSign land:
                     LandInfoParser(land);
                     break;
+                case LandSaleInfo sale:
+                    SaleInfoParser(sale);
+                    break;
                 default:
                     if (config.DebugEnabled)
                     {
                         var ipc = parser.ParseIPCHeader(message);
-                        var size = ipc.Value.segmentHeader.size;
                         var guessOpcode = ipc.Value.type;
-                        if (size == 2440)
+                        if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
                         {
                             logger.LogDebug("房屋列表Opcode不匹配！可能的Opcode为：" + guessOpcode);
                             if (config.DisableOpcodeCheck)
                                 WardInfoParser(parser.ParseAsPacket<HousingWardInfo, FFXIVIpcHousingWardInfo>(message));
                         }
-                        else if (size == 312)
+                        else if (message.Length == Marshal.SizeOf<FFXIVIpcLandInfoSign>())
                         {
                             logger.LogDebug("房屋门牌Opcode不匹配！可能的Opcode为：" + guessOpcode);
                             if (config.DisableOpcodeCheck)
                                 LandInfoParser(parser.ParseAsPacket<LandInfoSign, FFXIVIpcLandInfoSign>(message));
+                        }
+                        else if (message.Length == Marshal.SizeOf<FFXIVIpcLandSaleInfo>())
+                        {
+                            logger.LogDebug("房屋销售信息Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            if (config.DisableOpcodeCheck)
+                                SaleInfoParser(parser.ParseAsPacket<LandSaleInfo, FFXIVIpcLandSaleInfo>(message));
                         }
                     }
                     break;
@@ -437,6 +447,11 @@ namespace HousingCheck
             {
                 logger.LogError("信息解析失败：" + e.ToString());
             }
+        }
+
+        void SaleInfoParser(LandSaleInfo sale)
+        {
+            logger.LogInfo(sale.ToString());
         }
 
         private void ButtonUploadOnce_Click(object sender, EventArgs e)

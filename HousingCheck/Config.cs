@@ -13,6 +13,7 @@ namespace HousingCheck
         /// </summary>
         public const int OPCODE_WARD_INFO = 585;
         public const int OPCODE_LAND_INFO = 778;
+        public const int OPCODE_SALE_INFO = 0; // todo: 6.1 才知道这个值
 
         /// <summary>
         /// 上报API版本
@@ -93,6 +94,12 @@ namespace HousingCheck
         /// 自定义房屋门牌Opcode
         /// </summary>
         public int CustomOpcodeLand { get; set; }
+
+        /// <summary>
+        /// 自定义房屋售卖Opcode
+        /// </summary>
+        public int CustomOpcodeSale { get; set; }
+
         /// <summary>
         /// 房屋列表Opcode
         /// </summary>
@@ -101,6 +108,10 @@ namespace HousingCheck
         /// 房屋门牌Opcode
         /// </summary>
         public int OpcodeLand => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeLand : OPCODE_LAND_INFO;
+        /// <summary>
+        /// 房屋售卖信息Opcode
+        /// </summary>
+        public int OpcodeSale => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeSale : OPCODE_SALE_INFO;
 
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\HousingCheck.config.xml");
 
@@ -133,6 +144,7 @@ namespace HousingCheck
 
                     CustomOpcodeWard = int.Parse(head?.SelectSingleNode("CustomOpcodeWard")?.InnerText ?? OPCODE_WARD_INFO.ToString());
                     CustomOpcodeLand = int.Parse(head?.SelectSingleNode("CustomOpcodeLand")?.InnerText ?? OPCODE_LAND_INFO.ToString());
+                    CustomOpcodeLand = int.Parse(head?.SelectSingleNode("CustomOpcodeSale")?.InnerText ?? OPCODE_SALE_INFO.ToString());
                 }
                 catch (Exception e)
                 {
@@ -166,6 +178,7 @@ namespace HousingCheck
             xWriter.WriteElementString("UseCustomOpcode", UseCustomOpcode.ToString());
             xWriter.WriteElementString("CustomOpcodeWard", CustomOpcodeWard.ToString());
             xWriter.WriteElementString("CustomOpcodeLand", CustomOpcodeLand.ToString());
+            xWriter.WriteElementString("CustomOpcodeSale", CustomOpcodeSale.ToString());
 
             xWriter.WriteEndElement();              // </Config>
             xWriter.WriteEndDocument();             // Tie up loose ends (shouldn't be any)
