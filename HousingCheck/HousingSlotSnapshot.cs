@@ -178,6 +178,18 @@ namespace HousingCheck
             return csv.ToString();
         }
 
+        public string SlotStateCsv()
+        {
+            return string.Join(",", new string[] {
+                HousingItem.GetHouseAreaStr(Area),
+                (Slot + 1).ToString(),
+                GetPurchaseTypeName(PurchaseTypeMain),
+                GetPurchaseTypeName(PurchaseTypeSub),
+                GetRegionTypeName(RegionFlagMain),
+                GetRegionTypeName(RegionFlagSub),
+            });
+        }
+
         public HousingSlotSnapshotJSONObject ToJsonObject()
         {
             HousingSlotSnapshotJSONObject ret = new HousingSlotSnapshotJSONObject();
@@ -200,6 +212,34 @@ namespace HousingCheck
             ret.houses = houseListJson.ToArray();
 
             return ret;
+        }
+
+        public static string GetPurchaseTypeName(HousePurchaseType type)
+        {
+            switch (type)
+            {
+                case HousePurchaseType.FCFS:
+                    return "先到先得";
+                case HousePurchaseType.Lottery:
+                    return "抽选";
+                case HousePurchaseType.NotPurchasable:
+                    return "无法购买";
+                default:
+                    return "未知";
+            }
+        }
+
+        public static string GetRegionTypeName(HouseRegionType type)
+        {
+            switch(type)
+            {
+                case HouseRegionType.FC:
+                    return "部队房";
+                case HouseRegionType.Personal:
+                    return "个人房";
+                default:
+                    return "未知";
+            }
         }
     }
 }

@@ -11,9 +11,9 @@ namespace HousingCheck
         /// <summary>
         /// 国服版本6.05 Opcode
         /// </summary>
-        public const int OPCODE_WARD_INFO = 585;
-        public const int OPCODE_LAND_INFO = 778;
-        public const int OPCODE_SALE_INFO = 0; // todo: 6.1 才知道这个值
+        public const int OPCODE_WARD_INFO = 862;
+        public const int OPCODE_LAND_INFO = 803;
+        public const int OPCODE_SALE_INFO = 148;
 
         /// <summary>
         /// 上报API版本
@@ -144,7 +144,7 @@ namespace HousingCheck
 
                     CustomOpcodeWard = int.Parse(head?.SelectSingleNode("CustomOpcodeWard")?.InnerText ?? OPCODE_WARD_INFO.ToString());
                     CustomOpcodeLand = int.Parse(head?.SelectSingleNode("CustomOpcodeLand")?.InnerText ?? OPCODE_LAND_INFO.ToString());
-                    CustomOpcodeLand = int.Parse(head?.SelectSingleNode("CustomOpcodeSale")?.InnerText ?? OPCODE_SALE_INFO.ToString());
+                    CustomOpcodeSale = int.Parse(head?.SelectSingleNode("CustomOpcodeSale")?.InnerText ?? OPCODE_SALE_INFO.ToString());
                 }
                 catch (Exception e)
                 {
