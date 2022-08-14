@@ -51,10 +51,7 @@ namespace HousingCheck
         /// <summary>
         /// 启用ML房通知提醒
         /// </summary>
-        /// <remarks>
-        /// 为防止错过提示，此选项永远为True
-        /// </remarks>
-        public bool EnableNotifyHouseML => true;
+        public bool EnableNotifyHouseML { get; set; }
 
         /// <summary>
         /// 忽略穹顶皓天
@@ -132,7 +129,7 @@ namespace HousingCheck
                     EnableUploadSnapshot = bool.Parse(head?.SelectSingleNode("UploadSnapshot")?.InnerText ?? "true");
                     EnableTTS = bool.Parse(head?.SelectSingleNode("TTSNotify")?.InnerText ?? "false");
                     EnableNotification = bool.Parse(head?.SelectSingleNode("ShellNotify")?.InnerText ?? "false");
-                    // EnableNotifyHouseML = true;
+                    EnableNotifyHouseML = bool.Parse(head?.SelectSingleNode("NotifyHouseML")?.InnerText ?? "true");
                     EnableNotifyHouseS = bool.Parse(head?.SelectSingleNode("NotifyHouseS")?.InnerText ?? "false");
                     IgnoreEmpyreum = bool.Parse(head?.SelectSingleNode("IgnoreEmpyreum")?.InnerText ?? "true");
                     EnableNotifyCheck = bool.Parse(head?.SelectSingleNode("NotifyCheck")?.InnerText ?? "false");
@@ -169,6 +166,7 @@ namespace HousingCheck
             xWriter.WriteElementString("TTSNotify", EnableTTS.ToString());
             xWriter.WriteElementString("ShellNotify", EnableNotification.ToString());
             xWriter.WriteElementString("NotifyHouseS", EnableNotifyHouseS.ToString());
+            xWriter.WriteElementString("NotifyHouseML", EnableNotifyHouseML.ToString());
             xWriter.WriteElementString("IgnoreEmpyreum", IgnoreEmpyreum.ToString());
             xWriter.WriteElementString("NotifyCheck", EnableNotifyCheck.ToString());
             xWriter.WriteElementString("NotifyCheckAhead", CheckNotifyAheadTime.ToString());

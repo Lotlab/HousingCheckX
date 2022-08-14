@@ -38,6 +38,7 @@ namespace HousingCheck
         public bool EnableTTS { get => config.EnableTTS; set { config.EnableTTS = value; OnPropertyChanged(); } }
         public bool EnableNotification { get => config.EnableNotification; set { config.EnableNotification = value; OnPropertyChanged(); } }
         public bool EnableNotifyHouseS { get => config.EnableNotifyHouseS; set { config.EnableNotifyHouseS = value; OnPropertyChanged(); } }
+        public bool EnableNotifyHouseML { get => config.EnableNotifyHouseML; set { config.EnableNotifyHouseML = value; OnPropertyChanged(); } }
         public bool IgnoreEmpyreum { get => config.IgnoreEmpyreum; set { config.IgnoreEmpyreum = value; OnPropertyChanged(); } }
         public bool EnableNotifyCheck { get => config.EnableNotifyCheck; set { config.EnableNotifyCheck = value; OnPropertyChanged(); } }
         public string CheckNotifyAheadTime { get => config.CheckNotifyAheadTime.ToString(); set { config.CheckNotifyAheadTime = int.Parse(value); OnPropertyChanged(); } }

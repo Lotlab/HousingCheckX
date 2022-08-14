@@ -244,7 +244,6 @@ namespace HousingCheck
             if (onSaleItem.Area == HouseArea.穹顶皓天 && config.IgnoreEmpyreum)
                 return;
 
-            bool fallback = true;
             if (config.EnableNotification)
             {
                 var title = string.Format("{0} 第{1}区 {2}号 {3}房",
@@ -257,7 +256,6 @@ namespace HousingCheck
                     .AddText("新空房")
                     .AddText(title)
                     .Show();
-                fallback = false;
             }
             if (config.EnableTTS)
             {
@@ -269,20 +267,7 @@ namespace HousingCheck
                         onSaleItem.SizeStr
                     )
                 );
-                fallback = false;
             }
-            if (fallback)
-            {
-                PlayAlert();
-            }
-        }
-
-        /// <summary>
-        /// 播放提示音
-        /// </summary>
-        void PlayAlert()
-        {
-            Console.Beep(3000, 1000);
         }
 
         void WriteActLog(string message)
