@@ -94,6 +94,8 @@ namespace HousingCheck
         /// </summary>
         long AutoSaveAfter = 20;
 
+        Notifier notifier;
+
         /// <summary>
         /// 自动保存worker
         /// </summary>
@@ -103,11 +105,6 @@ namespace HousingCheck
         /// Log队列
         /// </summary>
         private BackgroundWorker LogQueueWorker;
-
-        /// <summary>
-        /// 定时任务Worker
-        /// </summary>
-        private BackgroundWorker TickWorker;
 
         /// <summary>
         /// 状态信息
@@ -127,7 +124,7 @@ namespace HousingCheck
                 ffxivPlugin.DataSubscription.NetworkSent -= NetworkSent;
                 AutoSaveThread.CancelAsync();
                 LogQueueWorker.CancelAsync();
-                TickWorker.CancelAsync();
+                notifier.Stop();
                 config.SaveSettings();
                 SaveHousingList();
                 logger.Close();
@@ -164,6 +161,7 @@ namespace HousingCheck
 
             logger = new SimpleLoggerSync(Path.Combine(DataDir, "app.log"));
             vm = new PluginControlViewModel(config, logger);
+            notifier = new Notifier(config);
 
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
@@ -200,9 +198,7 @@ namespace HousingCheck
             LogQueueWorker.DoWork += RunLogQueueWorker;
             LogQueueWorker.RunWorkerAsync();
 
-            TickWorker = new BackgroundWorker { WorkerSupportsCancellation = true };
-            TickWorker.DoWork += TickDoWorker;
-            TickWorker.RunWorkerAsync();
+            notifier.Start();
 
             statusLabel.Text = "Working :D";
             vm.OnInvoke += (arg) =>
@@ -219,7 +215,7 @@ namespace HousingCheck
                         ButtonSaveToFile_Click(null, null);
                         break;
                     case "TestNotification":
-                        NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false), false);
+                        notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false), false);
                         break;
                     default:
                         break;
@@ -231,60 +227,12 @@ namespace HousingCheck
             LoadHousingList();
         }
 
-        void NotifyEmptyHouseAsync(HousingOnSaleItem onSaleItem, bool exists)
-        {
-            new Action<HousingOnSaleItem, bool>((item, exist) => { NotifyEmptyHouse(item, exist); }).Invoke(onSaleItem, exists);
-        }
-
-        void NotifyEmptyHouse(HousingOnSaleItem onSaleItem, bool exists)
-        {
-            if (onSaleItem.Size == HouseSize.S && !config.EnableNotifyHouseS)
-                return;
-
-            if ((onSaleItem.Size == HouseSize.M || onSaleItem.Size == HouseSize.L) && !config.EnableNotifyHouseML)
-                return;
-
-            if (onSaleItem.Area == HouseArea.穹顶皓天 && config.IgnoreEmpyreum)
-                return;
-
-            if (config.EnableNotification)
-            {
-                var title = string.Format("{0} 第{1}区 {2}号 {3}房",
-                        onSaleItem.AreaStr,
-                        onSaleItem.DisplaySlot,
-                        onSaleItem.DisplayId,
-                        onSaleItem.SizeStr
-                    );
-                new ToastContentBuilder()
-                    .AddText("新空房")
-                    .AddText(title)
-                    .Show();
-            }
-            if (config.EnableTTS)
-            {
-                ActGlobals.oFormActMain.TTS(
-                    string.Format("{0}{1}区{2}号{3}房",
-                        HousingItem.GetHouseAreaShortStr(onSaleItem.Area),
-                        onSaleItem.DisplaySlot,
-                        onSaleItem.DisplayId,
-                        onSaleItem.SizeStr
-                    )
-                );
-            }
-        }
-
         void WriteActLog(string message)
         {
             var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
             LogQueue.Add((DateTime.Now, logText));
         }
 
-        string HousingListToJson()
-        {
-            return JsonConvert.SerializeObject(
-                vm.Sales.Where(x => x.CurrentStatus).ToArray()
-            );
-        }
         void NetworkSent(string connection, long epoch, byte[] message)
         {
             var packet = parser.ParsePacket(message);
@@ -392,7 +340,7 @@ namespace HousingCheck
                         logger.LogInfo(str);
                         WriteActLog(str);
 
-                        NotifyEmptyHouseAsync(onSaleItem, isExists);
+                        notifier.NotifyEmptyHouseAsync(onSaleItem, isExists);
                         if (!isExists)
                         {
                             updatedHousingList.Add(onSaleItem);
@@ -484,7 +432,10 @@ namespace HousingCheck
             string savePath = Path.Combine(DataDir, "list.json" );
 
             StreamWriter writer = new StreamWriter(savePath, false, Encoding.UTF8);
-            writer.Write(HousingListToJson());
+            var json = JsonConvert.SerializeObject(
+                vm.Sales.Where(x => x.CurrentStatus).ToArray()
+            );
+            writer.Write(json);
             writer.Close();
             logger.LogInfo($"房屋列表已保存到{savePath}");
         }
@@ -560,12 +511,6 @@ namespace HousingCheck
             }
 
             return stringBuilder.ToString();
-        }
-
-        private void OnTableUpdated(object sender, DataGridViewRowEventArgs e)
-        {
-            HousingListUpdated = true;
-            LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
         }
 
         private void RunLogQueueWorker(object sender, DoWorkEventArgs e)
@@ -653,56 +598,6 @@ namespace HousingCheck
             }
 
             logger.LogError("上报线程退出！！！！");
-        }
-
-        private DateTime GetNextNotifyTime()
-        {
-            var nT = DateTime.Now.AddHours(1);
-            return new DateTime(nT.Year, nT.Month, nT.Day, nT.Hour, 0, 0);
-        }
-
-        /// <summary>
-        /// 弹出查房提示
-        /// </summary>
-        private void NotifyCheckHouse()
-        {
-            if (config.EnableTTS)
-            {
-                ActGlobals.oFormActMain.TTS("查房提醒：该查房了");
-            }
-            if (config.EnableNotification)
-            {
-                new ToastContentBuilder()
-                    .AddText("查房提醒")
-                    .AddText("该查房了")
-                    .Show();
-            }
-        }
-
-        /// <summary>
-        /// 弹出查房提示
-        /// </summary>
-        private void NotifyCheckHouseAsnyc()
-        {
-            new Action(NotifyCheckHouse).Invoke();
-        }
-
-        private void TickDoWorker(object sender, DoWorkEventArgs e)
-        {
-            DateTime lastNotify = DateTime.Now.AddSeconds(-1);
-            while (!TickWorker.CancellationPending)
-            {
-                DateTime nextNotify = GetNextNotifyTime();
-                if (DateTime.Now > nextNotify.AddSeconds(-config.CheckNotifyAheadTime))
-                {
-                    if (lastNotify != nextNotify && config.EnableNotifyCheck)
-                    {
-                        NotifyCheckHouseAsnyc();
-                        lastNotify = nextNotify;
-                    }
-                }
-                Thread.Sleep(1000);
-            }
         }
 
         private class CustomWebClient : WebClient
