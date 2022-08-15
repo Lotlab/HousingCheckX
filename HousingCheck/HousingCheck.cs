@@ -124,6 +124,7 @@ namespace HousingCheck
             if (initialized)
             {
                 ffxivPlugin.DataSubscription.NetworkReceived -= NetworkReceived;
+                ffxivPlugin.DataSubscription.NetworkSent -= NetworkSent;
                 AutoSaveThread.CancelAsync();
                 LogQueueWorker.CancelAsync();
                 TickWorker.CancelAsync();
@@ -167,6 +168,7 @@ namespace HousingCheck
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
             parser.SetOpcode<LandSaleInfo>((ushort)config.OpcodeSale);
+            parser.SetOpcode<ClientTrigger>((ushort)config.OpcodeClientTrigger);
 
             control = new PluginControlWpf();
             control.DataContext = vm;
@@ -180,6 +182,7 @@ namespace HousingCheck
             pluginScreenSpace.Controls.Add(host);
 
             ffxivPlugin.DataSubscription.NetworkReceived += NetworkReceived;
+            ffxivPlugin.DataSubscription.NetworkSent += NetworkSent;
 
             initialized = true;
 
@@ -281,6 +284,18 @@ namespace HousingCheck
             return JsonConvert.SerializeObject(
                 vm.Sales.Where(x => x.CurrentStatus).ToArray()
             );
+        }
+        void NetworkSent(string connection, long epoch, byte[] message)
+        {
+            var packet = parser.ParsePacket(message);
+            switch (packet)
+            {
+                case ClientTrigger trigger:
+                    ClientTriggerParser(trigger);
+                    break;
+                default:
+                    break;
+            }
         }
 
         void NetworkReceived(string connection, long epoch, byte[] message)
@@ -437,6 +452,13 @@ namespace HousingCheck
         void SaleInfoParser(LandSaleInfo sale)
         {
             logger.LogInfo(sale.ToString());
+        }
+
+        void ClientTriggerParser(ClientTrigger trigger)
+        {
+            if (trigger.Value.commandId != 0x0451) return;
+            var req = parser.ParseAsPacket<ClientTriggerLandSaleRequest>(trigger.Value.data);
+            logger.LogInfo(req.ToString());
         }
 
         private void ButtonUploadOnce_Click(object sender, EventArgs e)

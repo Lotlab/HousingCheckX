@@ -9,11 +9,12 @@ namespace HousingCheck
     public class Config
     {
         /// <summary>
-        /// 国服版本6.05 Opcode
+        /// 国服 Opcode
         /// </summary>
         public const int OPCODE_WARD_INFO = 882;
         public const int OPCODE_LAND_INFO = 998;
-        public const int OPCODE_SALE_INFO = 148;
+        public const int OPCODE_SALE_INFO = 429;
+        public const int OPCODE_CLIENT_TRIGGER = 402;
 
         /// <summary>
         /// 上报API版本
@@ -109,6 +110,8 @@ namespace HousingCheck
         /// 房屋售卖信息Opcode
         /// </summary>
         public int OpcodeSale => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeSale : OPCODE_SALE_INFO;
+
+        public int OpcodeClientTrigger => OPCODE_CLIENT_TRIGGER;
 
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\HousingCheck.config.xml");
 
