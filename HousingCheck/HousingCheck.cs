@@ -300,7 +300,8 @@ namespace HousingCheck
         void SaleInfoParser(LandSaleInfo sale)
         {
             var lottery = storage.ProcessSaleInfo(sale);
-            if (lottery != null) {
+            if (lottery != null)
+            {
                 logger.LogInfo(lottery.ToString());
             }
         }
@@ -310,10 +311,16 @@ namespace HousingCheck
             if (trigger.Value.commandId != 0x0451) return;
             var req = parser.ParseAsPacket<ClientTriggerLandSaleRequest>(trigger.Value.data);
 
-            var lottery = storage.ProcessLandSaleReq(req, trigger.Value.ipc.timestamp);
-            if (lottery != null) {
+            var lottery = storage.ProcessLandSaleReq(req, trigger.Value.ipc.timestamp, GetServerID());
+            if (lottery != null)
+            {
                 logger.LogInfo(lottery.ToString());
             }
+        }
+
+        uint GetServerID()
+        {
+            return ffxivPlugin.DataRepository.GetCombatantList().FirstOrDefault(x => x.ID == ffxivPlugin.DataRepository.GetCurrentPlayerID()).CurrentWorldID;
         }
 
         private void UploadOnce()

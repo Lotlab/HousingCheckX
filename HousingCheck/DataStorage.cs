@@ -58,8 +58,9 @@ namespace HousingCheck
 
         public bool LotteryInfoChanged { get; set; } = false;
 
-        Tuple<ClientTriggerLandSaleRequest, uint> lastLotteryInfoRequest = null;
+        Tuple<ClientTriggerLandSaleRequest, uint, uint> lastLotteryInfoRequest = null;
         LandSaleInfo lastLotteryInfo = null;
+        HousingSlotSnapshot lastSnapshot = null;
 
         public DataStorage()
         {
@@ -197,13 +198,13 @@ namespace HousingCheck
             }
         }
 
-
         public IEnumerable<HousingItem> ProcessSnapshot(HousingSlotSnapshot snapshot)
         {
             if (snapshot.ServerId == 0) return new HousingItem[0];
 
             var lastSnapshot = Snapshots.Get(snapshot.landIdent);
             Snapshots.Add(snapshot);
+            lastSnapshot = snapshot;
 
             var updateList = new List<HousingOnSaleItem>();
             var removeList = new List<HousingOnSaleItem>();
@@ -240,6 +241,10 @@ namespace HousingCheck
                     removeList.Add(new HousingOnSaleItem(house));
                 }
             }
+
+            UpdateSales(updateList);
+            RemoveSales(removeList);
+
             LastActionTime = DateTime.Now;
             SnapshotChanged = true;
             return emptyList;
@@ -252,20 +257,20 @@ namespace HousingCheck
             LastActionTime = DateTime.Now;
         }
 
-        public HousingLotteryInfo ProcessLandSaleReq(ClientTriggerLandSaleRequest req, uint time)
+        public HousingLotteryInfo ProcessLandSaleReq(ClientTriggerLandSaleRequest req, uint time, uint currentServer)
         {
             if (lastLotteryInfo != null)
             {
                 if (Math.Abs(time - lastLotteryInfo.Value.ipc.timestamp) <= 1)
                 {
-                    var info = ProcessLotteryInfo(req, lastLotteryInfo);
+                    var info = ProcessLotteryInfo(req, lastLotteryInfo, currentServer);
                     lastLotteryInfo = null;
                     return info;
                 }
                 lastLotteryInfo = null;
             }
 
-            lastLotteryInfoRequest = new Tuple<ClientTriggerLandSaleRequest, uint>(req, time);
+            lastLotteryInfoRequest = new Tuple<ClientTriggerLandSaleRequest, uint, uint>(req, time, currentServer);
             return null;
         }
 
@@ -275,7 +280,7 @@ namespace HousingCheck
             {
                 if (Math.Abs(info.Value.ipc.timestamp - lastLotteryInfoRequest.Item2) <= 1)
                 {
-                    var lotteryInfo = ProcessLotteryInfo(lastLotteryInfoRequest.Item1, info);
+                    var lotteryInfo = ProcessLotteryInfo(lastLotteryInfoRequest.Item1, info, lastLotteryInfoRequest.Item3);
                     lastLotteryInfoRequest = null;
                     return lotteryInfo;
                 }
@@ -286,15 +291,17 @@ namespace HousingCheck
             return null;
         }
 
-        HousingLotteryInfo ProcessLotteryInfo(ClientTriggerLandSaleRequest req, LandSaleInfo info)
+        HousingLotteryInfo ProcessLotteryInfo(ClientTriggerLandSaleRequest req, LandSaleInfo info, uint serverID)
         {
             // todo: get current server ID
+            if (serverID == 0 && lastSnapshot != null) serverID = (uint)lastSnapshot.ServerId;
+
             LandIdent ident = new LandIdent(new Lotlab.PluginCommon.FFXIV.Parser.Packets.LandIdent()
             {
                 landId = req.landId,
                 wardNum = req.wardNum,
                 territoryTypeId = req.territoryTypeId,
-                worldId = 0,
+                worldId = (UInt16)serverID,
             });
 
             var lotteryInfo = new HousingLotteryInfo(ident, info);
