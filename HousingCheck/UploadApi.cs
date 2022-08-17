@@ -142,6 +142,18 @@ namespace HousingCheck
                     break;
             }
         }
+
+        public void UploadLotteryList(IEnumerable<HousingLotteryInfoBrief> lotteries)
+        {
+            switch (Version)
+            {
+                case ApiVersion.V1:
+                    throw new InvalidOperationException("Lottery list is APIv2 method");
+                case ApiVersion.V2:
+                    UploadRestfulJson("/lottery", "POST", lotteries);
+                    break;
+            }
+        }
     }
 
     class CustomWebClient : WebClient

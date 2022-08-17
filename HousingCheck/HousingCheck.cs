@@ -299,14 +299,21 @@ namespace HousingCheck
 
         void SaleInfoParser(LandSaleInfo sale)
         {
-            logger.LogInfo(sale.ToString());
+            var lottery = storage.ProcessSaleInfo(sale);
+            if (lottery != null) {
+                logger.LogInfo(lottery.ToString());
+            }
         }
 
         void ClientTriggerParser(ClientTrigger trigger)
         {
             if (trigger.Value.commandId != 0x0451) return;
             var req = parser.ParseAsPacket<ClientTriggerLandSaleRequest>(trigger.Value.data);
-            logger.LogInfo(req.ToString());
+
+            var lottery = storage.ProcessLandSaleReq(req, trigger.Value.ipc.timestamp);
+            if (lottery != null) {
+                logger.LogInfo(lottery.ToString());
+            }
         }
 
         private void UploadOnce()
@@ -447,6 +454,9 @@ namespace HousingCheck
 
                             if (storage.InfoSignsChanged && storage.InfoSigns.UploadCount > 0)
                                 UploadLandInfoSnapshot();
+
+                            if (storage.LotteryInfoChanged && storage.Lotteries.UploadCount > 0)
+                                UploadHouseLotteryList();
                         }
                     }
 
@@ -568,6 +578,44 @@ namespace HousingCheck
             catch (Exception ex)
             {
                 logger.LogError("房屋详细信息上报出错：" + ex.Message);
+            }
+        }
+
+        private void UploadHouseLotteryList()
+        {
+            try
+            {
+                var objs = new List<HousingLotteryInfoBrief>();
+                DateTime generatedTime = DateTime.MinValue;
+                foreach (var snapshot in storage.Lotteries.GetModifiedItems())
+                {
+                    if (snapshot == null) continue;
+                    generatedTime = snapshot.Time > generatedTime ? snapshot.Time : generatedTime;
+                    objs.Add(new HousingLotteryInfoBrief(snapshot));
+                }
+
+                try
+                {
+                    logger.LogInfo("正在上传房屋售卖信息");
+                    api.UploadLotteryList(objs);
+                    logger.LogInfo("房屋售卖信息上报成功");
+                    storage.Lotteries.MarkOutdated(generatedTime);
+                    storage.LotteryInfoChanged = false;
+                }
+                catch (ServerResponseException e)
+                {
+                    logger.LogError("房屋售卖信息上报出错。服务器返回：" + e.Message);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError("房屋售卖信息上报出错：" + e.Message);
+                }
+
+                Thread.Sleep(1000);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("房屋售卖信息上报出错：" + ex.Message);
             }
         }
     }

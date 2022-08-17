@@ -320,8 +320,8 @@ namespace HousingCheck
                 Price.ToString(),
                 GetHouseSizeStr(Size),
                 (Access == HouseAccess.PUBLIC) ? "开放" : "封闭",
-                HousingSlotSnapshot.GetPurchaseTypeName(purchaseType),
-                HousingSlotSnapshot.GetRegionTypeName(regionType),
+                purchaseType.GetDesc(),
+                regionType.GetDesc(),
             });
         }
 
@@ -343,6 +343,52 @@ namespace HousingCheck
             ret.isPublic = Access == HouseAccess.PUBLIC;
             ret.hasGreeting = Flags.HasEstateGreeting;
             return ret;
+        }
+    }
+
+    public static class EnumName
+    {
+        public static string GetDesc(this HousePurchaseType type)
+        {
+            switch (type)
+            {
+                case HousePurchaseType.FCFS:
+                    return "先到先得";
+                case HousePurchaseType.Lottery:
+                    return "抽选";
+                case HousePurchaseType.NotPurchasable:
+                    return "无法购买";
+                default:
+                    return "未知";
+            }
+        }
+
+        public static string GetDesc(this HouseRegionType type)
+        {
+            switch (type)
+            {
+                case HouseRegionType.FC:
+                    return "部队房";
+                case HouseRegionType.Personal:
+                    return "个人房";
+                default:
+                    return "未知";
+            }
+        }
+
+        public static string GetDesc(this LandStatus status)
+        {
+            switch (status)
+            {
+                case LandStatus.Available:
+                    return "可抽签";
+                case LandStatus.InResultsPeriod:
+                    return "公示期";
+                case LandStatus.Unavailable:
+                    return "准备中";
+                default:
+                    return "未知";
+            }
         }
     }
 }

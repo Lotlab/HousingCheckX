@@ -59,7 +59,7 @@ namespace HousingCheck
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    struct ClientTriggerLandSaleRequest
+    public struct ClientTriggerLandSaleRequest
     {
         public UInt16 territoryTypeId;
         public UInt16 padding1;

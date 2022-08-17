@@ -26,6 +26,12 @@ namespace HousingCheck
         public LandInfoSignStorage InfoSigns { get; } = new LandInfoSignStorage();
 
         /// <summary>
+        /// 房屋抽签信息存储
+        /// </summary>
+        /// <returns></returns>
+        public HousingLotteryInfoStorage Lotteries { get; } = new HousingLotteryInfoStorage();
+
+        /// <summary>
         /// 正在出售房屋列表
         /// </summary>
         /// <typeparam name="HousingOnSaleItem"></typeparam>
@@ -49,6 +55,11 @@ namespace HousingCheck
         public bool SnapshotChanged { get; set; } = false;
 
         public bool InfoSignsChanged { get; set; } = false;
+
+        public bool LotteryInfoChanged { get; set; } = false;
+
+        Tuple<ClientTriggerLandSaleRequest, uint> lastLotteryInfoRequest = null;
+        LandSaleInfo lastLotteryInfo = null;
 
         public DataStorage()
         {
@@ -239,6 +250,59 @@ namespace HousingCheck
             InfoSigns.Add(sign);
             InfoSignsChanged = true;
             LastActionTime = DateTime.Now;
+        }
+
+        public HousingLotteryInfo ProcessLandSaleReq(ClientTriggerLandSaleRequest req, uint time)
+        {
+            if (lastLotteryInfo != null)
+            {
+                if (Math.Abs(time - lastLotteryInfo.Value.ipc.timestamp) <= 1)
+                {
+                    var info = ProcessLotteryInfo(req, lastLotteryInfo);
+                    lastLotteryInfo = null;
+                    return info;
+                }
+                lastLotteryInfo = null;
+            }
+
+            lastLotteryInfoRequest = new Tuple<ClientTriggerLandSaleRequest, uint>(req, time);
+            return null;
+        }
+
+        public HousingLotteryInfo ProcessSaleInfo(LandSaleInfo info)
+        {
+            if (lastLotteryInfoRequest != null)
+            {
+                if (Math.Abs(info.Value.ipc.timestamp - lastLotteryInfoRequest.Item2) <= 1)
+                {
+                    var lotteryInfo = ProcessLotteryInfo(lastLotteryInfoRequest.Item1, info);
+                    lastLotteryInfoRequest = null;
+                    return lotteryInfo;
+                }
+                lastLotteryInfoRequest = null;
+            }
+
+            lastLotteryInfo = info;
+            return null;
+        }
+
+        HousingLotteryInfo ProcessLotteryInfo(ClientTriggerLandSaleRequest req, LandSaleInfo info)
+        {
+            // todo: get current server ID
+            LandIdent ident = new LandIdent(new Lotlab.PluginCommon.FFXIV.Parser.Packets.LandIdent()
+            {
+                landId = req.landId,
+                wardNum = req.wardNum,
+                territoryTypeId = req.territoryTypeId,
+                worldId = 0,
+            });
+
+            var lotteryInfo = new HousingLotteryInfo(ident, info);
+            Lotteries.Add(lotteryInfo);
+            LotteryInfoChanged = true;
+            LastActionTime = DateTime.Now;
+
+            return lotteryInfo;
         }
     }
 }

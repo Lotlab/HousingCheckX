@@ -120,6 +120,11 @@ namespace HousingCheck
 
             return Math.Sign(LandID - other.LandID);
         }
+
+        public override string ToString()
+        {
+            return $"{Area} {Slot + 1}-{LandID + 1}";
+        }
     }
 
     public class HousingSlotSnapshot
@@ -183,10 +188,10 @@ namespace HousingCheck
             return string.Join(",", new string[] {
                 HousingItem.GetHouseAreaStr(Area),
                 (Slot + 1).ToString(),
-                GetPurchaseTypeName(PurchaseTypeMain),
-                GetPurchaseTypeName(PurchaseTypeSub),
-                GetRegionTypeName(RegionFlagMain),
-                GetRegionTypeName(RegionFlagSub),
+                PurchaseTypeMain.GetDesc(),
+                PurchaseTypeSub.GetDesc(),
+                RegionFlagMain.GetDesc(),
+                RegionFlagSub.GetDesc(),
             });
         }
 
@@ -212,34 +217,6 @@ namespace HousingCheck
             ret.houses = houseListJson.ToArray();
 
             return ret;
-        }
-
-        public static string GetPurchaseTypeName(HousePurchaseType type)
-        {
-            switch (type)
-            {
-                case HousePurchaseType.FCFS:
-                    return "先到先得";
-                case HousePurchaseType.Lottery:
-                    return "抽选";
-                case HousePurchaseType.NotPurchasable:
-                    return "无法购买";
-                default:
-                    return "未知";
-            }
-        }
-
-        public static string GetRegionTypeName(HouseRegionType type)
-        {
-            switch (type)
-            {
-                case HouseRegionType.FC:
-                    return "部队房";
-                case HouseRegionType.Personal:
-                    return "个人房";
-                default:
-                    return "未知";
-            }
         }
     }
 }
