@@ -45,7 +45,7 @@ namespace HousingCheck
         /// </summary>
         bool ManualUpload = false;
 
-        DataStorage storage = new DataStorage();
+        DataStorage storage;
 
         /// <summary>
         /// 无操作自动保存的时间
@@ -119,6 +119,8 @@ namespace HousingCheck
             config.LoadSettings();
 
             logger = new SimpleLoggerSync(Path.Combine(DataDir, "app.log"));
+            logger.SetFilter(config.DebugEnabled ? LogLevel.DEBUG : LogLevel.INFO);
+            storage = new DataStorage(logger);
             vm = new PluginControlViewModel(config, logger, storage);
             notifier = new Notifier(config);
             api = new UploadApi(config);
@@ -221,7 +223,7 @@ namespace HousingCheck
                     SaleInfoParser(sale);
                     break;
                 default:
-                    if (config.DebugEnabled)
+                    if (config.EnableOpcodeGuess)
                     {
                         var ipc = parser.ParseIPCHeader(message);
                         var guessOpcode = ipc.Value.type;
@@ -299,6 +301,7 @@ namespace HousingCheck
 
         void SaleInfoParser(LandSaleInfo sale)
         {
+            logger.LogDebug(sale.ToString());
             var lottery = storage.ProcessSaleInfo(sale);
             if (lottery != null)
             {
@@ -310,8 +313,9 @@ namespace HousingCheck
         {
             if (trigger.Value.commandId != 0x0451) return;
             var req = parser.ParseAsPacket<ClientTriggerLandSaleRequest>(trigger.Value.data);
+            logger.LogDebug(req.ToString());
 
-            var lottery = storage.ProcessLandSaleReq(req, trigger.Value.ipc.timestamp, GetServerID());
+            var lottery = storage.ProcessLandSaleReq(req, GetServerID());
             if (lottery != null)
             {
                 logger.LogInfo(lottery.ToString());
@@ -527,7 +531,7 @@ namespace HousingCheck
 
                 try
                 {
-                    logger.LogInfo("正在上传房区快照");
+                    logger.LogInfo($"正在上传{objs.Count}个房区快照");
                     api.UploadHouselList(objs);
                     storage.Snapshots.MarkOutdated(latest);
                     storage.SnapshotChanged = false;
@@ -565,7 +569,7 @@ namespace HousingCheck
 
                 try
                 {
-                    logger.LogInfo("正在上传房屋详细信息");
+                    logger.LogInfo($"正在上传{objs.Count}间房屋详细信息");
                     api.UploadDetailList(objs);
                     logger.LogInfo("房屋详细信息上报成功");
                     storage.InfoSigns.MarkOutdated(generatedTime);
@@ -603,7 +607,7 @@ namespace HousingCheck
 
                 try
                 {
-                    logger.LogInfo("正在上传房屋售卖信息");
+                    logger.LogInfo($"正在上传{objs.Count}间房屋售卖信息");
                     api.UploadLotteryList(objs);
                     logger.LogInfo("房屋售卖信息上报成功");
                     storage.Lotteries.MarkOutdated(generatedTime);

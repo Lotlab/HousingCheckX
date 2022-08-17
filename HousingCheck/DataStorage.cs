@@ -10,6 +10,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
 using System.Text;
+using Lotlab.PluginCommon;
 
 namespace HousingCheck
 {
@@ -58,12 +59,14 @@ namespace HousingCheck
 
         public bool LotteryInfoChanged { get; set; } = false;
 
-        Tuple<ClientTriggerLandSaleRequest, uint, uint> lastLotteryInfoRequest = null;
-        LandSaleInfo lastLotteryInfo = null;
+        Tuple<ClientTriggerLandSaleRequest, DateTime, uint> lastLotteryInfoRequest = null;
+        Tuple<LandSaleInfo, DateTime> lastLotteryInfo = null;
         HousingSlotSnapshot lastSnapshot = null;
 
-        public DataStorage()
+        SimpleLogger logger { get; }
+        public DataStorage(SimpleLogger logger)
         {
+            this.logger = logger;
             BindingOperations.EnableCollectionSynchronization(Sales, salesLock);
         }
 
@@ -216,10 +219,13 @@ namespace HousingCheck
                 bool isExists = false;
 
                 // 检查是否之前是否正在出售
-                var oldSales = Sales.Where(s => s.Area == house.Area && s.Slot == house.Slot && s.Id == house.Id);
-                foreach (var oldOnSaleItem in oldSales)
+                lock (salesLock)
                 {
-                    isExists = true;
+                    var oldSales = Sales.Where(s => s.Area == house.Area && s.Slot == house.Slot && s.Id == house.Id);
+                    foreach (var oldOnSaleItem in oldSales)
+                    {
+                        isExists = true;
+                    }
                 }
 
                 if (isExists != house.IsEmpty)
@@ -257,37 +263,62 @@ namespace HousingCheck
             LastActionTime = DateTime.Now;
         }
 
-        public HousingLotteryInfo ProcessLandSaleReq(ClientTriggerLandSaleRequest req, uint time, uint currentServer)
-        {
-            if (lastLotteryInfo != null)
-            {
-                if (Math.Abs(time - lastLotteryInfo.Value.ipc.timestamp) <= 1)
-                {
-                    var info = ProcessLotteryInfo(req, lastLotteryInfo, currentServer);
-                    lastLotteryInfo = null;
-                    return info;
-                }
-                lastLotteryInfo = null;
-            }
+        readonly object lotteryLock = new object();
 
-            lastLotteryInfoRequest = new Tuple<ClientTriggerLandSaleRequest, uint, uint>(req, time, currentServer);
+        public HousingLotteryInfo ProcessLandSaleReq(ClientTriggerLandSaleRequest req, uint currentServer)
+        {
+            lock (lotteryLock)
+            {
+                var time = DateTime.Now;
+                if (lastLotteryInfo != null)
+                {
+                    if ((time - lastLotteryInfo.Item2).Duration() <= TimeSpan.FromSeconds(1))
+                    {
+                        var info = ProcessLotteryInfo(req, lastLotteryInfo.Item1, currentServer);
+                        lastLotteryInfo = null;
+                        return info;
+                    } 
+                    else
+                    {
+                        logger.LogDebug($"time: {time}, last: {lastLotteryInfo.Item2}");
+                    }
+                    //lastLotteryInfo = null;
+                } else
+                {
+                    logger.LogDebug("lastLotteryInfo is null!");
+                }
+
+                lastLotteryInfoRequest = new Tuple<ClientTriggerLandSaleRequest, DateTime, uint>(req, time, currentServer);
+            }
             return null;
         }
 
         public HousingLotteryInfo ProcessSaleInfo(LandSaleInfo info)
         {
-            if (lastLotteryInfoRequest != null)
+            lock (lotteryLock)
             {
-                if (Math.Abs(info.Value.ipc.timestamp - lastLotteryInfoRequest.Item2) <= 1)
+                var time = DateTime.Now;
+                if (lastLotteryInfoRequest != null)
                 {
-                    var lotteryInfo = ProcessLotteryInfo(lastLotteryInfoRequest.Item1, info, lastLotteryInfoRequest.Item3);
-                    lastLotteryInfoRequest = null;
-                    return lotteryInfo;
+                    if ((time - lastLotteryInfoRequest.Item2).Duration() <= TimeSpan.FromSeconds(1))
+                    {
+                        var lotteryInfo = ProcessLotteryInfo(lastLotteryInfoRequest.Item1, info, lastLotteryInfoRequest.Item3);
+                        lastLotteryInfoRequest = null;
+                        return lotteryInfo;
+                    }
+                    else
+                    {
+                        logger.LogDebug($"time: {info.Value.ipc.timestamp}, last: {lastLotteryInfoRequest.Item2}");
+                    }
+                    //lastLotteryInfoRequest = null;
                 }
-                lastLotteryInfoRequest = null;
-            }
+                else
+                {
+                    logger.LogDebug("lastLotteryInfoRequest is null!");
+                }
 
-            lastLotteryInfo = info;
+                lastLotteryInfo = new Tuple<LandSaleInfo, DateTime>(info, time);
+            }
             return null;
         }
 

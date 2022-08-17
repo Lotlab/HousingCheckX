@@ -110,6 +110,7 @@
                         <GroupBox Header="调试设置" Padding="5,2" Visibility="{Binding DebugVisibility}">
                             <StackPanel>
                                 <Label>修改调试设置可能会造成插件工作不正常，请谨慎修改。</Label>
+                                <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding EnableOpcodeGuess}">启用Opcode猜测</CheckBox>
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding DisableOpcodeCheck}">禁用Opcode过滤</CheckBox>
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding UseCustomOpcode}" IsEnabled="{Binding UseCustomOpcodeEditable}">使用自定义Opcode</CheckBox>
                                 <GroupBox Header="Opcode" Padding="5,2" IsEnabled="{Binding CustomOpcodeEditable}">

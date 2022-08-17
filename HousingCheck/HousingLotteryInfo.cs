@@ -38,7 +38,7 @@ namespace HousingCheck
 
         public override string ToString()
         {
-            return $"{LandIdent} {Status.GetDesc()}, 当前人数 {Persons}, 截至日期 {DateTimeOffset.FromUnixTimeSeconds(EndTime)}";
+            return $"{LandIdent} {Status.GetDesc()}, 当前人数 {Persons}, 截止时间 {DateTimeOffset.FromUnixTimeSeconds(EndTime).LocalDateTime}";
         }
     }
 
@@ -72,6 +72,7 @@ namespace HousingCheck
             State = (int)sign.Status;
             Participate = sign.Persons;
             Winner = sign.Winner;
+            EndTime = sign.EndTime;
         }
     }
 

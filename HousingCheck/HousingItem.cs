@@ -383,7 +383,7 @@ namespace HousingCheck
                 case LandStatus.Available:
                     return "可抽签";
                 case LandStatus.InResultsPeriod:
-                    return "公示期";
+                    return "公示中";
                 case LandStatus.Unavailable:
                     return "准备中";
                 default:

@@ -12,16 +12,16 @@ namespace HousingCheck
     {
         Config config { get; }
 
-        Uri baseUrl
+        string baseUrl
         {
             get
             {
                 switch (Version)
                 {
                     case ApiVersion.V1:
-                        return new Uri(config.UploadUrl);
+                        return config.UploadUrl;
                     case ApiVersion.V2:
-                        return new Uri(config.UploadUrl.TrimEnd('/'));
+                        return config.UploadUrl.TrimEnd('/');
                     default:
                         return null;
                 }
@@ -70,7 +70,7 @@ namespace HousingCheck
 
         Uri GetFullUrl(string relative)
         {
-            var fullUrl = new Uri(baseUrl, relative);
+            var fullUrl = new Uri(baseUrl + relative);
             if (doNotExpect100Continue)
             {
                 var servicePoint = ServicePointManager.FindServicePoint(fullUrl);

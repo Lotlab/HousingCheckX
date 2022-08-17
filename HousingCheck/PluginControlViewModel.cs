@@ -43,6 +43,7 @@ namespace HousingCheck
         public bool EnableNotifyCheck { get => config.EnableNotifyCheck; set { config.EnableNotifyCheck = value; OnPropertyChanged(); } }
         public string CheckNotifyAheadTime { get => config.CheckNotifyAheadTime.ToString(); set { config.CheckNotifyAheadTime = int.Parse(value); OnPropertyChanged(); } }
         public bool DebugEnabled { get => config.DebugEnabled; set { config.DebugEnabled = value; OnPropertyChanged(); logger.SetFilter(value ? LogLevel.DEBUG : LogLevel.INFO); OnPropertyChanged(nameof(DebugVisibility)); } }
+        public bool EnableOpcodeGuess { get => config.EnableOpcodeGuess; set { config.EnableOpcodeGuess = value; OnPropertyChanged(); OnPropertyChanged(nameof(EnableOpcodeGuess)); } }
         public bool DisableOpcodeCheck { get => config.DisableOpcodeCheck; set { config.DisableOpcodeCheck = value; OnPropertyChanged(); OnPropertyChanged(nameof(CustomOpcodeEditable)); OnPropertyChanged(nameof(UseCustomOpcodeEditable)); } }
         public bool UseCustomOpcode { get => config.UseCustomOpcode; set { config.UseCustomOpcode = value; OnPropertyChanged(); OnPropertyChanged(nameof(CustomOpcodeEditable)); } }
         public string CustomOpcodeWard { get => config.CustomOpcodeWard.ToString(); set { config.CustomOpcodeWard = int.Parse(value); OnPropertyChanged(); } }
@@ -54,6 +55,8 @@ namespace HousingCheck
         public bool UseCustomOpcodeEditable => !DisableOpcodeCheck;
 
         public ObservableCollection<LogItem> Logs => logger.ObserveLogs;
+
+        public ObservableCollection<HousingOnSaleItem> Sales => storage.Sales;
 
         public event Action<string> OnInvoke;
 

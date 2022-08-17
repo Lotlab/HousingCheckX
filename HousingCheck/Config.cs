@@ -76,6 +76,12 @@ namespace HousingCheck
         /// 调试模式是否开启
         /// </summary>
         public bool DebugEnabled { get; set; }
+
+        /// <summary>
+        /// 是否启用Opcode猜测
+        /// </summary>
+        public bool EnableOpcodeGuess { get; set; }
+
         /// <summary>
         /// 是否勾上禁用Opcode检测
         /// </summary>
@@ -140,6 +146,7 @@ namespace HousingCheck
 
                     DebugEnabled = bool.Parse(head?.SelectSingleNode("Debug")?.InnerText ?? "false");
                     DisableOpcodeCheck = bool.Parse(head?.SelectSingleNode("DisableOpcodeCheck")?.InnerText ?? "false");
+                    EnableOpcodeGuess = bool.Parse(head?.SelectSingleNode("EnableOpcodeGuess")?.InnerText ?? "false");
                     UseCustomOpcode = bool.Parse(head?.SelectSingleNode("UseCustomOpcode")?.InnerText ?? "false");
 
                     CustomOpcodeWard = int.Parse(head?.SelectSingleNode("CustomOpcodeWard")?.InnerText ?? OPCODE_WARD_INFO.ToString());
@@ -176,6 +183,7 @@ namespace HousingCheck
 
             xWriter.WriteElementString("Debug", DebugEnabled.ToString());
             xWriter.WriteElementString("DisableOpcodeCheck", DisableOpcodeCheck.ToString());
+            xWriter.WriteElementString("EnableOpcodeGuess", EnableOpcodeGuess.ToString());
             xWriter.WriteElementString("UseCustomOpcode", UseCustomOpcode.ToString());
             xWriter.WriteElementString("CustomOpcodeWard", CustomOpcodeWard.ToString());
             xWriter.WriteElementString("CustomOpcodeLand", CustomOpcodeLand.ToString());
