@@ -1,18 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Windows.Forms;
-using System.Collections;
 using System.Linq;
-using System.Text;
 using Advanced_Combat_Tracker;
-using System.Net;
 using System.Threading;
 using System.ComponentModel;
-using System.Collections.Specialized;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Microsoft.Toolkit.Uwp.Notifications;
 using System.Collections.Concurrent;
 using System.Windows.Forms.Integration;
 using Lotlab.PluginCommon.FFXIV.Parser.Packets;
@@ -33,8 +26,6 @@ public static class Extensions
 
 namespace HousingCheck
 {
-    public enum ApiVersion { V1, V2 }
-
     public class HousingCheck : IActPluginV1
     {
         /// <summary>
@@ -54,45 +45,12 @@ namespace HousingCheck
         /// </summary>
         bool ManualUpload = false;
 
-        /// <summary>
-        /// 有自动上报任务
-        /// </summary>
-        bool HousingListUpdated = false;
-
-        /// <summary>
-        /// 快照自上次上报以来有更新
-        /// </summary>
-        bool SnapshotUpdated = false;
-
-        /// <summary>
-        /// 房屋详细信息自上次上报以来有更新
-        /// </summary>
-        bool LandInfoUpdated = false;
-
-        /// <summary>
-        /// 房区快照
-        /// </summary>
-        HousingSnapshotStorage SnapshotStorage = new HousingSnapshotStorage();
-
-        /// <summary>
-        /// 进行房区快照上报用的存储
-        /// </summary>
-        ConcurrentDictionary<Tuple<HouseArea, int>, HousingSlotSnapshot> WillUploadSnapshot = new ConcurrentDictionary<Tuple<HouseArea, int>, HousingSlotSnapshot>();
-
-        /// <summary>
-        /// 房屋详细信息存储
-        /// </summary>
-        LandInfoSignStorage LandInfoSignStorage = new LandInfoSignStorage();
-
-        /// <summary>
-        /// 用户上次操作的时间
-        /// </summary>
-        long LastOperateTime = 0;
+        DataStorage storage = new DataStorage();
 
         /// <summary>
         /// 无操作自动保存的时间
         /// </summary>
-        long AutoSaveAfter = 20;
+        TimeSpan AutoSaveAfter = TimeSpan.FromSeconds(20);
 
         Notifier notifier;
 
@@ -112,9 +70,10 @@ namespace HousingCheck
         Label statusLabel;
         PluginControlWpf control;
         PluginControlViewModel vm;
-        Config config;
+        Config config = new Config();
         SimpleLoggerSync logger;
         NetworkParser parser = new NetworkParser();
+        UploadApi api;
 
         void IActPluginV1.DeInitPlugin()
         {
@@ -160,8 +119,9 @@ namespace HousingCheck
             config.LoadSettings();
 
             logger = new SimpleLoggerSync(Path.Combine(DataDir, "app.log"));
-            vm = new PluginControlViewModel(config, logger);
+            vm = new PluginControlViewModel(config, logger, storage);
             notifier = new Notifier(config);
+            api = new UploadApi(config);
 
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
@@ -206,16 +166,16 @@ namespace HousingCheck
                 switch (arg)
                 {
                     case "UploadManaually":
-                        ButtonUploadOnce_Click(null, null);
+                        UploadOnce();
                         break;
                     case "CopyToClipboard":
-                        ButtonCopyToClipboard_Click(null, null);
+                        CopySalesToClipboard();
                         break;
                     case "SaveToFile":
-                        ButtonSaveToFile_Click(null, null);
+                        SaveToCsv();
                         break;
                     case "TestNotification":
-                        notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false), false);
+                        notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false));
                         break;
                     default:
                         break;
@@ -297,72 +257,18 @@ namespace HousingCheck
                 //解析数据包
                 snapshot = new HousingSlotSnapshot(info);
 
-                if (snapshot.ServerId == 0)
-                    return;
-                 
-                //存入存储
-                SnapshotStorage.Insert(snapshot);
-                WillUploadSnapshot[new Tuple<HouseArea, int>(snapshot.Area, snapshot.Slot)] = snapshot;
-                SnapshotUpdated = true;
-
-                //本区房屋列表
-                var housingList = snapshot.HouseList;
-
-                // 过滤本区房屋列表
-                var oldOnSaleList = vm.Sales.Where(h => h.Area == snapshot.Area && h.Slot == snapshot.Slot);
-
-                var removeList = new List<HousingOnSaleItem>();
-
-                foreach (var a in housingList)
+                var emptyHouses = storage.ProcessSnapshot(snapshot);
+                foreach (var house in emptyHouses)
                 {
-                    HousingItem house = a.Value;
                     HousingOnSaleItem onSaleItem = new HousingOnSaleItem(house);
-                    bool isExists = false;
+                    var str = string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
+                        onSaleItem.AreaStr, onSaleItem.DisplaySlot, onSaleItem.DisplayId,
+                        onSaleItem.SizeStr, onSaleItem.Price);
+                    logger.LogInfo(str);
+                    WriteActLog(str);
 
-                    //查找并更新原有房屋
-                    var oldOnSaleItems = oldOnSaleList.Where(x => x.Id == house.Id);
-                    foreach (var oldOnSaleItem in oldOnSaleItems)
-                    {
-                        updatedHousingList.Add(onSaleItem);
-                        isExists = true;
-                    }
-
-                    if (isExists)
-                    {
-                        HousingListUpdated = true;
-                    }
-
-                    if (house.IsEmpty)
-                    {
-                        var str = string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
-                            onSaleItem.AreaStr, onSaleItem.DisplaySlot, onSaleItem.DisplayId,
-                            onSaleItem.SizeStr, onSaleItem.Price);
-                        logger.LogInfo(str);
-                        WriteActLog(str);
-
-                        notifier.NotifyEmptyHouseAsync(onSaleItem, isExists);
-                        if (!isExists)
-                        {
-                            updatedHousingList.Add(onSaleItem);
-                            HousingListUpdated = true;
-                        }
-                        else
-                        {
-                            logger.LogInfo("重复土地，已更新。");
-                        }
-
-                        var signInfo = new HousingLandInfoSign(snapshot.ServerId, house.Area, house.Slot, house.Id, snapshot.Time, house.Size);
-                        LandInfoSignStorage.Add(signInfo);
-                        LandInfoUpdated = true;
-
-                    }
-                    else if (isExists)
-                    {
-                        removeList.Add(onSaleItem);
-                    }
+                    notifier.NotifyEmptyHouseAsync(onSaleItem);
                 }
-
-                LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
 
                 // 输出翻页日志
                 var logStr = string.Format("{0} 第{1}区查询完成",
@@ -371,9 +277,6 @@ namespace HousingCheck
                 logger.LogInfo(logStr);
                 WriteActLog(logStr);
 
-                //刷新UI
-                vm.UpdateSales(updatedHousingList);
-                vm.RemoveSales(removeList);
             }
             catch (Exception ex)
             {
@@ -386,10 +289,7 @@ namespace HousingCheck
             try
             {
                 var info = new HousingLandInfoSign(sign);
-                LandInfoSignStorage.Add(info);
-                LandInfoUpdated = true;
-
-                LastOperateTime = new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds(); //更新上次操作的时间
+                storage.ProcessInfoSign(info);
             }
             catch (Exception e)
             {
@@ -409,15 +309,15 @@ namespace HousingCheck
             logger.LogInfo(req.ToString());
         }
 
-        private void ButtonUploadOnce_Click(object sender, EventArgs e)
+        private void UploadOnce()
         {
             logger.LogInfo($"准备上报");
             ManualUpload = true;
         }
 
-        private void ButtonCopyToClipboard_Click(object sender, EventArgs e)
+        private void CopySalesToClipboard()
         {
-            Clipboard.SetText(ListToString());
+            Clipboard.SetText(storage.GetSalesString(config.IgnoreEmpyreum));
             logger.LogInfo($"复制成功");
         }
 
@@ -429,88 +329,48 @@ namespace HousingCheck
 
         private void SaveHousingList()
         {
-            string savePath = Path.Combine(DataDir, "list.json" );
-
-            StreamWriter writer = new StreamWriter(savePath, false, Encoding.UTF8);
-            var json = JsonConvert.SerializeObject(
-                vm.Sales.Where(x => x.CurrentStatus).ToArray()
-            );
-            writer.Write(json);
-            writer.Close();
-            logger.LogInfo($"房屋列表已保存到{savePath}");
+            try
+            {
+                storage.SaveSaleList(HousingListFile);
+                logger.LogInfo($"房屋列表已保存到{HousingListFile}");
+            }
+            catch (Exception e)
+            {
+                logger.LogError("房屋列表保存失败：" + e.Message);
+            }
         }
 
         private void LoadHousingList()
         {
-            string savePath = Path.Combine(DataDir, "list.json");
-            if (!File.Exists(savePath)) return;
-            StreamReader reader = new StreamReader(savePath, Encoding.UTF8);
-            string jsonStr = reader.ReadToEnd();
-            reader.Close();
+            if (!File.Exists(HousingListFile)) return;
+
             try
             {
-                var list = JsonConvert.DeserializeObject<HousingOnSaleItem[]>(jsonStr);
-                vm.UpdateSales(list);
+                storage.LoadSaleList(HousingListFile);
                 logger.LogInfo("已恢复上次保存的房屋列表");
             }
             catch (Exception ex)
             {
                 logger.LogError("恢复上次保存的房屋列表失败：" + ex.Message);
             }
-            reader.Close();
         }
 
+        string HousingListFile => Path.Combine(DataDir, "list.json");
         string DataDir => Path.Combine(Environment.CurrentDirectory, "AppData", "HousingCheck");
         string SnapshotDir => Path.Combine(DataDir, "snapshots");
 
-        private void ButtonSaveToFile_Click(object sender, EventArgs e)
+        private void SaveToCsv()
         {
             PrepareDir();
-            string time = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string snapshotFilename = $"HousingCheck-{time}-Snapshot.csv";
-            string landInfoFilename = $"HousingCheck-{time}-LandInfo.csv";
-
-            using (var writer = new StreamWriter(Path.Combine(SnapshotDir, snapshotFilename), false, Encoding.UTF8))
+            try
             {
-                SnapshotStorage.SaveCsv(writer);
+                storage.ExportStorageToCsv(SnapshotDir);
+                logger.LogInfo($"已保存到 {SnapshotDir} 文件夹");
             }
-
-            if (LandInfoSignStorage.Count > 0)
+            catch (Exception ex)
             {
-                using (var writer = new StreamWriter(Path.Combine(SnapshotDir, landInfoFilename), false, Encoding.UTF8))
-                {
-                    LandInfoSignStorage.WriteCSV(writer);
-                }
+                logger.LogInfo("保存失败: " + ex.ToString());
             }
-
-            logger.LogInfo($"已保存到 {SnapshotDir} 文件夹");
-        }
-
-        private string ListToString()
-        {
-            byte area = 0;
-            StringBuilder stringBuilder = new StringBuilder();
-            foreach (var line in vm.Sales)
-            {
-                if (!line.CurrentStatus)
-                    continue;
-
-                if (line.Area == HouseArea.穹顶皓天 && config.IgnoreEmpyreum)
-                    continue;
-
-                stringBuilder.Append($"{line.AreaStr} 第{line.DisplaySlot}区 {line.DisplayId}号{line.SizeStr}房在售，当前价格:{line.Price} {Environment.NewLine}");
-
-                if (line.Area >= 0) area |= (byte)(1 << (int)line.Area);
-            }
-            for (int i = 1; i <= (int)HouseArea.穹顶皓天; i++)
-            {
-                if ((area & (1 << i)) == 0)
-                {
-                    stringBuilder.Append($"{HousingItem.GetHouseAreaStr((HouseArea)i)} 无空房 {Environment.NewLine}");
-                }
-            }
-
-            return stringBuilder.ToString();
         }
 
         private void RunLogQueueWorker(object sender, DoWorkEventArgs e)
@@ -543,51 +403,54 @@ namespace HousingCheck
             {
                 try
                 {
-                    long actionTime = LastOperateTime + AutoSaveAfter;
-                    int snapshotCount = WillUploadSnapshot.Count;
-                    bool autoUpload = config.AutoUpload;
+                    var actionTime = storage.LastActionTime + AutoSaveAfter;
                     bool uploadSnapshot = config.EnableUploadSnapshot;
                     ApiVersion apiVersion = config.UploadApiVersion;
 
+                    bool shouldUpload = false;
+                    bool saleListChanged = storage.SaleListChanged;
+
                     if (ManualUpload)
                     {
-                        logger.LogDebug("手动开始上报");
-                        UploadOnSaleList(apiVersion);
-                        HousingListUpdated = false;
-                        LandInfoUpdated = false;
-                        // 手动上传在任何情况下都应当上传存储的数据
-                        if (apiVersion == ApiVersion.V2 && uploadSnapshot)
-                        {
-                            if (snapshotCount > 0)
-                                UploadSnapshot();
-
-                            if (LandInfoSignStorage.UploadCount > 0)
-                                UploadLandInfoSnapshot();
-                        }
+                        logger.LogDebug("开始手动上报任务");
+                        shouldUpload = true;
                         ManualUpload = false;
-                        logger.LogDebug("手动上报任务执行完毕");
                     }
-                    else if (actionTime <= new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds())
+                    else if (actionTime < DateTime.Now)
                     {
-                        if (HousingListUpdated)
+                        if (storage.SaleListChanged)
                         {
                             //保存列表文件
                             SaveHousingList();
                             logger.LogInfo("房屋信息已保存");
-                            if (autoUpload) UploadOnSaleList(apiVersion);
-
-                            HousingListUpdated = false;
+                            saleListChanged = false;
                         }
 
-                        if (autoUpload)
+                        if (config.AutoUpload) shouldUpload = true;
+                    }
+
+                    if (shouldUpload)
+                    {
+                        if (apiVersion == ApiVersion.V1)
                         {
-                            if (apiVersion == ApiVersion.V2 && uploadSnapshot)
+                            if (ManualUpload || storage.SaleListChanged)
                             {
-                                if (SnapshotUpdated) UploadSnapshot();
-                                if (LandInfoUpdated) UploadLandInfoSnapshot();
+                                UploadOnSaleList();
                             }
+                            saleListChanged = false;
+                        }
+
+                        if (apiVersion == ApiVersion.V2 && uploadSnapshot)
+                        {
+                            if (storage.SnapshotChanged && storage.Snapshots.UploadCount > 0)
+                                UploadSnapshot();
+
+                            if (storage.InfoSignsChanged && storage.InfoSigns.UploadCount > 0)
+                                UploadLandInfoSnapshot();
                         }
                     }
+
+                    storage.SaleListChanged = saleListChanged;
                 }
                 catch (Exception ex)
                 {
@@ -600,114 +463,35 @@ namespace HousingCheck
             logger.LogError("上报线程退出！！！！");
         }
 
-        private class CustomWebClient : WebClient
+        private void UploadOnSaleList()
         {
-            protected override WebRequest GetWebRequest(Uri uri)
-            {
-                WebRequest w = base.GetWebRequest(uri);
-                w.Timeout = 60 * 1000; // 60s
-                return w;
-            }
-        }
-
-        System.Reflection.AssemblyName assemblyName => System.Reflection.Assembly.GetExecutingAssembly().GetName();
-
-        public bool UploadData(string type, string postContent, string mime = "application/json")
-        {
-            var wb = new CustomWebClient();
-            var token = config.UploadToken.Trim();
-            if (token != "")
-            {
-                wb.Headers[HttpRequestHeader.Authorization] = "Token " + token;
-            }
-            wb.Headers[HttpRequestHeader.ContentType] = mime;
-            wb.Headers.Add(HttpRequestHeader.UserAgent, assemblyName.Name + "/" + assemblyName.Version);
-
-            string url;
-            switch (config.UploadApiVersion)
-            {
-                case ApiVersion.V1:
-                    url = config.UploadUrl;
-                    break;
-                case ApiVersion.V2:
-                default:
-                    url = config.UploadUrl.TrimEnd('/') + "/" + type;
-                    break;
-            }
-
-            // 调试用，可以解决部分网页服务器不支持此功能的问题
-            // var servicePoint = ServicePointManager.FindServicePoint(new Uri(url));
-            // servicePoint.Expect100Continue = false;
-
             try
             {
-                var response = wb.UploadData(url, "POST",
-                    Encoding.UTF8.GetBytes(postContent)
-                );
-                string res = Encoding.UTF8.GetString(response);
-                if (res.Length > 0)
+                var msg = storage.GetSalesString(config.IgnoreEmpyreum);
+                if (msg.Length == 0)
                 {
-                    if (res[0] == '{')
-                    {
-                        var jsonRes = JsonConvert.DeserializeObject<Dictionary<string, string>>(res);
-                        if (jsonRes["statusText"].ToLower() == "ok")
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            logger.LogError("上传出错：" + jsonRes["errorMessage"]);
-                        }
-                    }
-                    else
-                    {
-                        if (res.ToLower() == "ok")
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            logger.LogError("上传出错：" + res);
-                        }
-                    }
+                    logger.LogError("上报数据为空");
                 }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError("上传出错：" + ex.Message);
-            }
-            return false;
-        }
+                try
+                {
+                    logger.LogInfo("正在上传房屋列表");
+                    api.UploadOnSaleListMsg(msg);
+                    logger.LogInfo("房屋列表上报成功");
+                }
+                catch (ServerResponseException e)
+                {
+                    logger.LogError("房屋列表上报出错。服务器返回：" + e.Message);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError("房屋列表上报出错：" + e.Message);
+                }
 
-        private void UploadOnSaleList(ApiVersion apiVersion = ApiVersion.V2)
-        {
-            string postContent = "";
-            string mime = "application/json";
-            switch (apiVersion)
-            {
-                case ApiVersion.V2:
-                    postContent = JsonConvert.SerializeObject(vm.Sales);
-                    break;
-                case ApiVersion.V1:
-                    postContent = "text=" + WebUtility.UrlEncode(ListToString());
-                    mime = "application/x-www-form-urlencoded";
-                    break;
+                Thread.Sleep(1000);
             }
-            if (postContent.Length == 0)
+            catch (Exception e)
             {
-                logger.LogError("上报数据为空");
-            }
-            //Log("Debug", postContent);
-            logger.LogInfo("正在上传房屋列表");
-            bool res = UploadData("info", postContent, mime);
-
-            if (res)
-            {
-                logger.LogInfo("房屋列表上报成功");
-            }
-            else
-            {
-                Thread.Sleep(2000);
+                logger.LogError("房屋列表上报出错：" + e.Message);
             }
         }
 
@@ -715,53 +499,71 @@ namespace HousingCheck
         {
             try
             {
-                List<HousingSlotSnapshotJSONObject> snapshotJSONObjects = new List<HousingSlotSnapshotJSONObject>();
-                foreach (var snapshot in WillUploadSnapshot.Values)
+                List<HousingSlotSnapshotJSONObject> objs = new List<HousingSlotSnapshotJSONObject>();
+                DateTime latest = DateTime.MinValue;
+                foreach (var snapshot in storage.Snapshots.GetModifiedItems())
                 {
-                    if (snapshot != null)
-                    {
-                        snapshotJSONObjects.Add(snapshot.ToJsonObject());
-                    }
+                    if (snapshot == null) continue;
+                    latest = snapshot.Time > latest ? snapshot.Time : latest;
+                    objs.Add(snapshot.ToJsonObject());
                 }
-                string json = JsonConvert.SerializeObject(snapshotJSONObjects);
-                SnapshotUpdated = false;
-                logger.LogInfo("正在上传房区快照");
-                bool res = UploadData("info", json);
-                if (res)
+
+                try
                 {
+                    logger.LogInfo("正在上传房区快照");
+                    api.UploadHouselList(objs);
+                    storage.Snapshots.MarkOutdated(latest);
+                    storage.SnapshotChanged = false;
                     logger.LogInfo("房区快照上报成功");
                 }
-                else
+                catch (ServerResponseException e)
                 {
-                    Thread.Sleep(1000);
+                    logger.LogError("房区快照上报出错。服务器返回：" + e.Message);
                 }
+                catch (Exception e)
+                {
+                    logger.LogError("房区快照上报出错：" + e.Message);
+                }
+
+                Thread.Sleep(1000);
             }
             catch (Exception ex)
             {
                 logger.LogError("房区快照上报出错：" + ex.Message);
             }
-            //Log("Info", $"上报消息给 {post_url}");
         }
 
         private void UploadLandInfoSnapshot()
         {
             try
             {
-                var objs = LandInfoSignStorage.ToJsonObj();
-                LandInfoUpdated = false;
-                string json = JsonConvert.SerializeObject(objs);
-                logger.LogInfo("正在上传房屋详细信息");
-                bool res = UploadData("detail", json);
-                if (res)
+                List<LandInfoSignBrief> objs = new List<LandInfoSignBrief>();
+                DateTime generatedTime = DateTime.MinValue;
+                foreach (var snapshot in storage.InfoSigns.GetModifiedItems())
                 {
+                    if (snapshot == null) continue;
+                    generatedTime = snapshot.Time > generatedTime ? snapshot.Time : generatedTime;
+                    objs.Add(new LandInfoSignBrief(snapshot));
+                }
+
+                try
+                {
+                    logger.LogInfo("正在上传房屋详细信息");
+                    api.UploadDetailList(objs);
                     logger.LogInfo("房屋详细信息上报成功");
-                    // 标记过时数据以防止重复上报
-                    LandInfoSignStorage.MarkOutdated(DateTime.Now);
+                    storage.InfoSigns.MarkOutdated(generatedTime);
+                    storage.InfoSignsChanged = false;
                 }
-                else
+                catch (ServerResponseException e)
                 {
-                    Thread.Sleep(1000);
+                    logger.LogError("房屋详细信息上报出错。服务器返回：" + e.Message);
                 }
+                catch (Exception e)
+                {
+                    logger.LogError("房屋详细信息上报出错：" + e.Message);
+                }
+
+                Thread.Sleep(1000);
             }
             catch (Exception ex)
             {

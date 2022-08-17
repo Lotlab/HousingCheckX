@@ -12,15 +12,15 @@ namespace HousingCheck
 {
     public class PluginControlViewModel : PropertyNotifier
     {
-        Config config;
+        Config config { get; }
         SimpleLogger logger { get; }
-        readonly object salesLock = new object();
-        public PluginControlViewModel(Config config, SimpleLogger logger)
+        DataStorage storage { get; }
+
+        public PluginControlViewModel(Config config, SimpleLogger logger, DataStorage storage)
         {
             this.config = config;
             this.logger = logger;
-
-            BindingOperations.EnableCollectionSynchronization(Sales, salesLock);
+            this.storage = storage;
         }
         public int UploadApiVersion
         {
@@ -54,41 +54,6 @@ namespace HousingCheck
         public bool UseCustomOpcodeEditable => !DisableOpcodeCheck;
 
         public ObservableCollection<LogItem> Logs => logger.ObserveLogs;
-
-        public ObservableCollection<HousingOnSaleItem> Sales { get; private set; } = new ObservableCollection<HousingOnSaleItem>();
-
-        public void UpdateSales(IEnumerable<HousingOnSaleItem> items)
-        {
-            lock (salesLock)
-            {
-                foreach (HousingOnSaleItem item in items)
-                {
-                    int listIndex;
-                    if ((listIndex = Sales.IndexOf(item)) != -1)
-                    {
-                        Sales[listIndex].Update(item);
-                    }
-                    else
-                    {
-                        Sales.Add(item);
-                    }
-                }
-            }
-        }
-
-        public void RemoveSales(IEnumerable<HousingOnSaleItem> items)
-        {
-            lock (salesLock)
-            {
-                foreach (var item in items)
-                {
-                    if (Sales.Contains(item))
-                    {
-                        Sales.Remove(item);
-                    }
-                }
-            }
-        }
 
         public event Action<string> OnInvoke;
 

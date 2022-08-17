@@ -25,13 +25,13 @@ namespace HousingCheck
         public string OwnerName { get; }
         public string FcTag { get; }
         public byte[] Tag { get; }
- 
+
         public HousingLandInfoSign(LandInfoSign sign)
         {
             Time = DateTimeOffset.FromUnixTimeSeconds(sign.Value.ipc.timestamp).LocalDateTime;
             LandIdent = new LandIdent(sign.Value.landIdent);
 
-            OwnerID =  sign.Value.ownerId;
+            OwnerID = sign.Value.ownerId;
 
             HouseIconAdd = sign.Value.houseIconAdd; // 01: ?
             HouseSize = (HouseSize)sign.Value.houseSize;// 00: S, 01: M, 02: L
@@ -53,7 +53,7 @@ namespace HousingCheck
         /// <param name="id"></param>
         /// <param name="time"></param>
         /// <param name="size"></param>
-        public HousingLandInfoSign(int serverID, HouseArea area, int slot, int id , DateTime time, HouseSize size) : 
+        public HousingLandInfoSign(int serverID, HouseArea area, int slot, int id, DateTime time, HouseSize size) :
             this(new LandIdent(serverID, area, slot, id), time, size)
         {
         }
@@ -131,7 +131,7 @@ namespace HousingCheck
 
         public int Count => storage.Count;
 
-        public int UploadCount => storage.Where(i => i.Value.Time >= timeAfter).Count();
+        public int UploadCount => storage.Where(i => i.Value.Time > timeAfter).Count();
 
         public void WriteCSV(StreamWriter writer)
         {
@@ -139,34 +139,30 @@ namespace HousingCheck
             writer.WriteLine("服务器,地区,房区,房号,大小,类型,所有者ID,所有者名称,部队简称,房屋名称,房屋问候语,更新时间");
             foreach (var item in values)
             {
-                writer.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", 
-                    item.ServerId, 
-                    item.Area, 
-                    item.Slot + 1, 
+                writer.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}",
+                    item.ServerId,
+                    item.Area,
+                    item.Slot + 1,
                     item.LandID + 1,
                     item.HouseSize,
-                    HousingItem.GetOwnerTypeStr(item.HouseType), 
-                    item.OwnerID, 
+                    HousingItem.GetOwnerTypeStr(item.HouseType),
+                    item.OwnerID,
                     item.OwnerName,
                     item.FcTag,
-                    item.EstateName, 
+                    item.EstateName,
                     item.EstateGreeting?.Replace("\r", "\\n"), // 描述内换行替换
                     item.Time)
                 );
             }
         }
 
-        public LandInfoSignBrief[] ToJsonObj()
+
+        public IEnumerable<HousingLandInfoSign> GetModifiedItems()
         {
-            List<LandInfoSignBrief> array = new List<LandInfoSignBrief>();
-            foreach (var item in storage)
+            lock (this)
             {
-                if (item.Value.Time >= timeAfter)
-                {
-                    array.Add(new LandInfoSignBrief(item.Value));
-                }
+                return storage.Where(kv => kv.Value.Time > timeAfter).Select(kv => kv.Value);
             }
-            return array.ToArray();
         }
     }
 }

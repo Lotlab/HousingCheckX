@@ -87,12 +87,12 @@ namespace HousingCheck
             }
         }
 
-        public void NotifyEmptyHouseAsync(HousingOnSaleItem onSaleItem, bool exists)
+        public void NotifyEmptyHouseAsync(HousingOnSaleItem onSaleItem)
         {
-            new Action<HousingOnSaleItem, bool>((item, exist) => { NotifyEmptyHouse(item, exist); }).Invoke(onSaleItem, exists);
+            new Action<HousingOnSaleItem>((item) => { NotifyEmptyHouse(item); }).Invoke(onSaleItem);
         }
 
-        public void NotifyEmptyHouse(HousingOnSaleItem onSaleItem, bool exists)
+        public void NotifyEmptyHouse(HousingOnSaleItem onSaleItem)
         {
             if (onSaleItem.Size == HouseSize.S && !config.EnableNotifyHouseS)
                 return;

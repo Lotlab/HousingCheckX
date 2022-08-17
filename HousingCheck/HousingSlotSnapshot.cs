@@ -157,7 +157,7 @@ namespace HousingCheck
         public HousingItem[] GetOnSale()
         {
             List<HousingItem> onSaleList = new List<HousingItem>();
-            foreach(HousingItem house in HouseList.Values)
+            foreach (HousingItem house in HouseList.Values)
             {
                 if (house.IsEmpty)
                 {
@@ -170,9 +170,9 @@ namespace HousingCheck
         public string ToCsv()
         {
             StringBuilder csv = new StringBuilder();
-            foreach(var house in HouseList.Values)
+            foreach (var house in HouseList.Values)
             {
-                csv.AppendLine(house.ToCsvLine());
+                csv.AppendLine(house.ToCsvLine(house.Id < 30 ? PurchaseTypeMain : PurchaseTypeSub, house.Id < 30 ? RegionFlagMain : RegionFlagSub));
             }
             csv.AppendLine();
             return csv.ToString();
@@ -204,7 +204,7 @@ namespace HousingCheck
             ret.region_sub = (int)RegionFlagSub;
 
             List<HousingItemJSONObject> houseListJson = new List<HousingItemJSONObject>();
-            foreach(var house in HouseList.Values)
+            foreach (var house in HouseList.Values)
             {
                 houseListJson.Add(house.ToJsonObject());
             }
@@ -231,7 +231,7 @@ namespace HousingCheck
 
         public static string GetRegionTypeName(HouseRegionType type)
         {
-            switch(type)
+            switch (type)
             {
                 case HouseRegionType.FC:
                     return "部队房";

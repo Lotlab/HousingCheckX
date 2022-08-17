@@ -310,7 +310,7 @@ namespace HousingCheck
             }
         }
 
-        public string ToCsvLine()
+        public string ToCsvLine(HousePurchaseType purchaseType, HouseRegionType regionType)
         {
             return string.Join(",", new string[] {
                 GetHouseAreaStr(Area),
@@ -319,7 +319,9 @@ namespace HousingCheck
                 Owner,
                 Price.ToString(),
                 GetHouseSizeStr(Size),
-                (Access == HouseAccess.PUBLIC) ? "开放" : "封闭"
+                (Access == HouseAccess.PUBLIC) ? "开放" : "封闭",
+                HousingSlotSnapshot.GetPurchaseTypeName(purchaseType),
+                HousingSlotSnapshot.GetRegionTypeName(regionType),
             });
         }
 
