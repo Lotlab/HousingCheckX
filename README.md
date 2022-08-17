@@ -18,3 +18,14 @@ FF14查房插件
 
 点击 [Release](https://github.com/Lotlab/HousingCheckXP/releases) 下载
 
+## 安装
+
+直接载入即可。
+
+若需要记录抽签人数等抽签信息，你需要先将此插件更新到 1.7.0 或以上。
+
+在此基础之上，你需要将你的FFXIV解析插件模式改为 WinPcap 模式。
+
+在插件设置页面中，勾上 "启用Winpcap支持" 或 "Use Winpcap-compatile library" 即可。
+
+若你是第一次使用 WinPcap 模式，则需要安装 [Npcap](https://npcap.com/#download)
