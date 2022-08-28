@@ -204,6 +204,17 @@ namespace HousingCheck
                     ClientTriggerParser(trigger);
                     break;
                 default:
+                    if (config.EnableOpcodeGuess)
+                    {
+                        var ipc = parser.ParseIPCHeader(message);
+                        var guessOpcode = ipc.Value.type;
+                        if (message.Length == Marshal.SizeOf<FFXIVIpcClientTrigger>())
+                        {
+                            logger.LogDebug("ClientTrigger可能的Opcode为：" + guessOpcode);
+                            if (config.DisableOpcodeCheck)
+                                ClientTriggerParser(parser.ParseAsPacket<ClientTrigger, FFXIVIpcClientTrigger>(message));
+                        }
+                    }
                     break;
             }
         }
@@ -229,19 +240,19 @@ namespace HousingCheck
                         var guessOpcode = ipc.Value.type;
                         if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
                         {
-                            logger.LogDebug("房屋列表Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            logger.LogDebug("房屋列表可能的Opcode为：" + guessOpcode);
                             if (config.DisableOpcodeCheck)
                                 WardInfoParser(parser.ParseAsPacket<HousingWardInfo, FFXIVIpcHousingWardInfo>(message));
                         }
                         else if (message.Length == Marshal.SizeOf<FFXIVIpcLandInfoSign>())
                         {
-                            logger.LogDebug("房屋门牌Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            logger.LogDebug("房屋门牌可能的Opcode为：" + guessOpcode);
                             if (config.DisableOpcodeCheck)
                                 LandInfoParser(parser.ParseAsPacket<LandInfoSign, FFXIVIpcLandInfoSign>(message));
                         }
                         else if (message.Length == Marshal.SizeOf<FFXIVIpcLandSaleInfo>())
                         {
-                            logger.LogDebug("房屋销售信息Opcode不匹配！可能的Opcode为：" + guessOpcode);
+                            logger.LogDebug("房屋销售信息可能的Opcode为：" + guessOpcode);
                             if (config.DisableOpcodeCheck)
                                 SaleInfoParser(parser.ParseAsPacket<LandSaleInfo, FFXIVIpcLandSaleInfo>(message));
                         }

@@ -105,6 +105,11 @@ namespace HousingCheck
         public int CustomOpcodeSale { get; set; }
 
         /// <summary>
+        /// 自定义 ClientTrigger Opcode
+        /// </summary>
+        public int CustomOpcodeClientTrigger { get; set; }
+
+        /// <summary>
         /// 房屋列表Opcode
         /// </summary>
         public int OpcodeWard => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeWard : OPCODE_WARD_INFO;
@@ -117,7 +122,10 @@ namespace HousingCheck
         /// </summary>
         public int OpcodeSale => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeSale : OPCODE_SALE_INFO;
 
-        public int OpcodeClientTrigger => OPCODE_CLIENT_TRIGGER;
+        /// <summary>
+        /// Client Trigger Opcode
+        /// </summary>
+        public int OpcodeClientTrigger => (UseCustomOpcode && !DisableOpcodeCheck) ? CustomOpcodeClientTrigger : OPCODE_CLIENT_TRIGGER;
 
         private static readonly string SettingsFile = Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config\\HousingCheck.config.xml");
 
@@ -131,10 +139,9 @@ namespace HousingCheck
                     xdo.Load(SettingsFile);
                     XmlNode head = xdo.SelectSingleNode("Config");
                     UploadUrl = head?.SelectSingleNode("UploadURL")?.InnerText;
-                    UploadApiVersion = (ApiVersion)int.Parse(head?.SelectSingleNode("UploadApiVersion")?.InnerText);
+                    UploadApiVersion = (ApiVersion)int.Parse(head?.SelectSingleNode("UploadApiVersion")?.InnerText ?? "1");
                     UploadToken = head?.SelectSingleNode("UploadToken")?.InnerText;
-                    AutoUpload = bool.Parse(head?.SelectSingleNode("AutoUpload")?.InnerText ?? "false");
-                    //checkBoxML.Checked = bool.Parse(head?.SelectSingleNode("UploadMLOnly")?.InnerText ?? "true");
+                    AutoUpload = bool.Parse(head?.SelectSingleNode("AutoUpload")?.InnerText ?? "true");
                     EnableUploadSnapshot = bool.Parse(head?.SelectSingleNode("UploadSnapshot")?.InnerText ?? "true");
                     EnableTTS = bool.Parse(head?.SelectSingleNode("TTSNotify")?.InnerText ?? "false");
                     EnableNotification = bool.Parse(head?.SelectSingleNode("ShellNotify")?.InnerText ?? "false");
@@ -152,6 +159,7 @@ namespace HousingCheck
                     CustomOpcodeWard = int.Parse(head?.SelectSingleNode("CustomOpcodeWard")?.InnerText ?? OPCODE_WARD_INFO.ToString());
                     CustomOpcodeLand = int.Parse(head?.SelectSingleNode("CustomOpcodeLand")?.InnerText ?? OPCODE_LAND_INFO.ToString());
                     CustomOpcodeSale = int.Parse(head?.SelectSingleNode("CustomOpcodeSale")?.InnerText ?? OPCODE_SALE_INFO.ToString());
+                    CustomOpcodeClientTrigger = int.Parse(head?.SelectSingleNode("CustomOpcodeClientTrigger")?.InnerText ?? OPCODE_CLIENT_TRIGGER.ToString());
                 }
                 catch (Exception e)
                 {
@@ -188,6 +196,7 @@ namespace HousingCheck
             xWriter.WriteElementString("CustomOpcodeWard", CustomOpcodeWard.ToString());
             xWriter.WriteElementString("CustomOpcodeLand", CustomOpcodeLand.ToString());
             xWriter.WriteElementString("CustomOpcodeSale", CustomOpcodeSale.ToString());
+            xWriter.WriteElementString("CustomOpcodeClientTrigger", CustomOpcodeClientTrigger.ToString());
 
             xWriter.WriteEndElement();              // </Config>
             xWriter.WriteEndDocument();             // Tie up loose ends (shouldn't be any)

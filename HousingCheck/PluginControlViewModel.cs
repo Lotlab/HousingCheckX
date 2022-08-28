@@ -48,6 +48,8 @@ namespace HousingCheck
         public bool UseCustomOpcode { get => config.UseCustomOpcode; set { config.UseCustomOpcode = value; OnPropertyChanged(); OnPropertyChanged(nameof(CustomOpcodeEditable)); } }
         public string CustomOpcodeWard { get => config.CustomOpcodeWard.ToString(); set { config.CustomOpcodeWard = int.Parse(value); OnPropertyChanged(); } }
         public string CustomOpcodeLand { get => config.CustomOpcodeLand.ToString(); set { config.CustomOpcodeLand = int.Parse(value); OnPropertyChanged(); } }
+        public string CustomOpcodeSale { get => config.CustomOpcodeSale.ToString(); set { config.CustomOpcodeSale = int.Parse(value); OnPropertyChanged(); } }
+        public string CustomOpcodeClientTrigger { get => config.CustomOpcodeClientTrigger.ToString(); set { config.CustomOpcodeClientTrigger = int.Parse(value); OnPropertyChanged(); } }
 
         public Visibility DebugVisibility => DebugEnabled ? Visibility.Visible : Visibility.Hidden;
 

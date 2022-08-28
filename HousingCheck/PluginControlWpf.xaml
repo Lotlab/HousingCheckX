@@ -113,20 +113,26 @@
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding EnableOpcodeGuess}">启用Opcode猜测</CheckBox>
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding DisableOpcodeCheck}">禁用Opcode过滤</CheckBox>
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding UseCustomOpcode}" IsEnabled="{Binding UseCustomOpcodeEditable}">使用自定义Opcode</CheckBox>
-                                <GroupBox Header="Opcode" Padding="5,2" IsEnabled="{Binding CustomOpcodeEditable}">
+                                <GroupBox Header="自定义 Opcode" Padding="5,2" IsEnabled="{Binding CustomOpcodeEditable}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="120px"></ColumnDefinition>
-                                            <ColumnDefinition Width="40px"></ColumnDefinition>
+                                            <ColumnDefinition Width="100px"></ColumnDefinition>
+                                            <ColumnDefinition Width="50px"></ColumnDefinition>
+                                            <ColumnDefinition Width="100px"></ColumnDefinition>
+                                            <ColumnDefinition Width="50px"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition></RowDefinition>
                                             <RowDefinition></RowDefinition>
                                         </Grid.RowDefinitions>
-                                        <Label>房屋列表Opcode</Label>
+                                        <Label>房屋列表</Label>
                                         <TextBox VerticalContentAlignment="Center" Grid.Column="1" InputScope="Number" Text="{Binding CustomOpcodeWard}"/>
-                                        <Label Grid.Row="1">房屋门牌Opcode</Label>
+                                        <Label Grid.Row="1">房屋门牌</Label>
                                         <TextBox VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="1"  InputScope="Number" Text="{Binding CustomOpcodeLand}"/>
+                                        <Label Grid.Row="0" Grid.Column="2">抽选信息</Label>
+                                        <TextBox VerticalContentAlignment="Center" Grid.Row="0" Grid.Column="3"  InputScope="Number" Text="{Binding CustomOpcodeSale}"/>
+                                        <Label Grid.Row="1" Grid.Column="2">ClientTrigger</Label>
+                                        <TextBox VerticalContentAlignment="Center" Grid.Row="1" Grid.Column="3"  InputScope="Number" Text="{Binding CustomOpcodeClientTrigger}"/>
                                     </Grid>
                                 </GroupBox>
                             </StackPanel>
