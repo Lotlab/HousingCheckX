@@ -49,26 +49,7 @@ namespace HousingCheck
         public LandIdent(Lotlab.PluginCommon.FFXIV.Parser.Packets.LandIdent ident)
         {
             ServerID = ident.worldId;
-            switch (ident.territoryTypeId)
-            {
-                case 0x153:
-                    Area = HouseArea.海雾村;
-                    break;
-                case 0x154:
-                    Area = HouseArea.薰衣草苗圃;
-                    break;
-                case 0x155:
-                    Area = HouseArea.高脚孤丘;
-                    break;
-                case 0x281:
-                    Area = HouseArea.白银乡;
-                    break;
-                case 0x3D3:
-                    Area = HouseArea.穹顶皓天;
-                    break;
-                default:
-                    break;
-            }
+            Area = GetHouseArea(ident.territoryTypeId);
             Slot = ident.wardNum;
             LandID = ident.landId;
         }
@@ -124,6 +105,25 @@ namespace HousingCheck
         public override string ToString()
         {
             return $"{Area} {Slot + 1}-{LandID + 1}";
+        }
+
+        public static HouseArea GetHouseArea(UInt16 territoryTypeId)
+        {
+            switch (territoryTypeId)
+            {
+                case 0x153:
+                    return HouseArea.海雾村;
+                case 0x154:
+                    return HouseArea.薰衣草苗圃;
+                case 0x155:
+                    return HouseArea.高脚孤丘;
+                case 0x281:
+                    return HouseArea.白银乡;
+                case 0x3D3:
+                    return HouseArea.穹顶皓天;
+                default:
+                    return HouseArea.UNKNOW;
+            }
         }
     }
 

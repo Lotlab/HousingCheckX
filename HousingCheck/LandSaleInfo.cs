@@ -79,5 +79,14 @@ namespace HousingCheck
         {
             return $"(?) Land Sale. territory: {territoryTypeId}, ward: {wardNum + 1}, land: {landId + 1}";
         }
+
+        public bool IsValid()
+        {
+            var area = LandIdent.GetHouseArea(territoryTypeId);
+            if (area == HouseArea.UNKNOW) return false;
+            if (landId >= 60) return false;
+            if (wardNum >= 24) return false;
+            return true;
+        }
     }
 }

@@ -204,18 +204,27 @@ namespace HousingCheck
                     ClientTriggerParser(trigger);
                     break;
                 default:
-                    if (config.EnableOpcodeGuess)
+                    break;
+            }
+
+            if (config.EnableOpcodeGuess)
+            {
+                var ipc = parser.ParseIPCHeader(message);
+                var guessOpcode = ipc.Value.type;
+                if (message.Length == Marshal.SizeOf<FFXIVIpcClientTrigger>())
+                {
+                    var trigger = parser.ParseAsPacket<ClientTrigger, FFXIVIpcClientTrigger>(message);
+                    if (trigger.Value.commandId == 0x0451)
                     {
-                        var ipc = parser.ParseIPCHeader(message);
-                        var guessOpcode = ipc.Value.type;
-                        if (message.Length == Marshal.SizeOf<FFXIVIpcClientTrigger>())
+                        var req = parser.ParseAsPacket<ClientTriggerLandSaleRequest>(trigger.Value.data);
+                        if (req.IsValid())
                         {
                             logger.LogDebug("ClientTrigger可能的Opcode为：" + guessOpcode);
-                            if (config.DisableOpcodeCheck)
-                                ClientTriggerParser(parser.ParseAsPacket<ClientTrigger, FFXIVIpcClientTrigger>(message));
+                            logger.LogDebug(req.ToString());
+                            if (config.DisableOpcodeCheck) ClientTriggerParser(trigger);
                         }
                     }
-                    break;
+                }
             }
         }
 
@@ -234,30 +243,45 @@ namespace HousingCheck
                     SaleInfoParser(sale);
                     break;
                 default:
-                    if (config.EnableOpcodeGuess)
-                    {
-                        var ipc = parser.ParseIPCHeader(message);
-                        var guessOpcode = ipc.Value.type;
-                        if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
-                        {
-                            logger.LogDebug("房屋列表可能的Opcode为：" + guessOpcode);
-                            if (config.DisableOpcodeCheck)
-                                WardInfoParser(parser.ParseAsPacket<HousingWardInfo, FFXIVIpcHousingWardInfo>(message));
-                        }
-                        else if (message.Length == Marshal.SizeOf<FFXIVIpcLandInfoSign>())
-                        {
-                            logger.LogDebug("房屋门牌可能的Opcode为：" + guessOpcode);
-                            if (config.DisableOpcodeCheck)
-                                LandInfoParser(parser.ParseAsPacket<LandInfoSign, FFXIVIpcLandInfoSign>(message));
-                        }
-                        else if (message.Length == Marshal.SizeOf<FFXIVIpcLandSaleInfo>())
-                        {
-                            logger.LogDebug("房屋销售信息可能的Opcode为：" + guessOpcode);
-                            if (config.DisableOpcodeCheck)
-                                SaleInfoParser(parser.ParseAsPacket<LandSaleInfo, FFXIVIpcLandSaleInfo>(message));
-                        }
-                    }
                     break;
+            }
+            if (config.EnableOpcodeGuess)
+            {
+                var ipc = parser.ParseIPCHeader(message);
+                var guessOpcode = ipc.Value.type;
+                if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
+                {
+                    var wardInfo = parser.ParseAsPacket<HousingWardInfo, FFXIVIpcHousingWardInfo>(message);
+                    if (wardInfo.IsValid())
+                    {
+                        logger.LogDebug("房屋列表可能的Opcode为：" + guessOpcode);
+                        if (config.DisableOpcodeCheck) WardInfoParser(wardInfo);
+                        return;
+                    }
+                }
+
+                if (message.Length == Marshal.SizeOf<FFXIVIpcLandInfoSign>())
+                {
+                    var sign = parser.ParseAsPacket<LandInfoSign, FFXIVIpcLandInfoSign>(message);
+                    if (sign.IsValid())
+                    {
+                        logger.LogDebug("房屋门牌可能的Opcode为：" + guessOpcode);
+                        if (config.DisableOpcodeCheck) LandInfoParser(sign);
+                        return;
+                    }
+                }
+
+                if (message.Length == Marshal.SizeOf<FFXIVIpcLandSaleInfo>())
+                {
+                    var sale = parser.ParseAsPacket<LandSaleInfo, FFXIVIpcLandSaleInfo>(message);
+                    if (sale.IsValid())
+                    {
+                        logger.LogDebug("房屋销售信息可能的Opcode为：" + guessOpcode);
+                        logger.LogDebug(sale.ToString());
+                        if (config.DisableOpcodeCheck) SaleInfoParser(sale);
+                        return;
+                    }
+                }
             }
         }
 
@@ -639,6 +663,41 @@ namespace HousingCheck
             {
                 logger.LogError("房屋售卖信息上报出错：" + ex.Message);
             }
+        }
+    }
+
+
+    static class PacketValidator
+    {
+        public static bool IsValid(this HousingWardInfo info)
+        {
+            if (LandIdent.GetHouseArea(info.Value.landIdent.territoryTypeId) == HouseArea.UNKNOW) return false;
+            if (info.Value.landIdent.wardNum >= 24) return false;
+            for (int i = 0; i < 4; i++)
+                if (info.Value.purchaseType[i] >= 4) return false;
+            return true;
+        }
+
+        public static bool IsValid(this LandInfoSign info)
+        {
+            if (LandIdent.GetHouseArea(info.Value.landIdent.territoryTypeId) == HouseArea.UNKNOW) return false;
+            if (info.Value.landIdent.landId >= 60) return false;
+            if (info.Value.landIdent.wardNum >= 24) return false;
+            if (info.Value.houseSize > (int)HouseSize.L) return false;
+            return true;
+        }
+
+        public static bool IsValid(this LandSaleInfo info)
+        {
+            if ((int)info.Value.purchase_type >= 3) return false;
+            if ((int)info.Value.region_type >= 3) return false;
+            if ((int)info.Value.status >= 4) return false;
+
+            var time = DateTimeOffset.Now.ToUnixTimeSeconds(); 
+            // 结束时间必须是整点，且必须大于当前时间
+            if (info.Value.endTime % 3600 != 0 || info.Value.endTime < time) return false;
+            
+            return true;
         }
     }
 }
