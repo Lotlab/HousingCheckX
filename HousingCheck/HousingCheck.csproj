@@ -53,4 +53,7 @@
     <ProjectReference Include="..\PluginCommon\PluginCommon.WPF\Lotlab.PluginCommon.WPF.csproj" />
     <ProjectReference Include="..\PluginCommon\PluginCommon\Lotlab.PluginCommon.csproj" />
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="$(TargetDir)..\..\..\..\HousingCheck.Packer\bin\Release\net48\HousingCheck.Packer $(TargetDir)" />
+  </Target>
 </Project>
