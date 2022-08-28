@@ -11,8 +11,10 @@ using System.Windows.Forms.Integration;
 using Lotlab.PluginCommon.FFXIV.Parser.Packets;
 using Lotlab.PluginCommon.FFXIV.Parser;
 using Lotlab.PluginCommon.FFXIV;
+using Lotlab.PluginCommon.Updater;
 using Lotlab.PluginCommon;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 public static class Extensions
 {
@@ -70,10 +72,12 @@ namespace HousingCheck
         Label statusLabel;
         PluginControlWpf control;
         PluginControlViewModel vm;
+
         Config config = new Config();
         SimpleLoggerSync logger;
         NetworkParser parser = new NetworkParser();
         UploadApi api;
+        ExtendedUpdater updater;
 
         void IActPluginV1.DeInitPlugin()
         {
@@ -101,17 +105,27 @@ namespace HousingCheck
             statusLabel = pluginStatusText;
 
             var plugins = ActGlobals.oFormActMain.ActPlugins;
+            ActPluginData thisPlugin = null;
             foreach (var item in plugins)
             {
                 if (item.pluginFile.Name.ToUpper().Contains("FFXIV_ACT_PLUGIN") && item.pluginObj != null)
                 {
                     ffxivPlugin = new ACTPluginProxy(item.pluginObj);
                 }
+                if (item.pluginObj == this)
+                {
+                    thisPlugin = item;
+                }
             }
 
             if (ffxivPlugin == null)
             {
                 pluginStatusText.Text = "FFXIV Act Plugin is not loading.";
+                return;
+            }
+            if (thisPlugin == null)
+            {
+                pluginStatusText.Text = "COULD NOT DETECT THIS PLUGIN DATA.";
                 return;
             }
 
@@ -124,6 +138,7 @@ namespace HousingCheck
             vm = new PluginControlViewModel(config, logger, storage);
             notifier = new Notifier(config);
             api = new UploadApi(config);
+            updater = new ExtendedUpdater("https://tools.lotlab.org/dl/ffxiv/HousingCheckXP/_update/", thisPlugin.pluginFile.DirectoryName);
 
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
@@ -163,36 +178,61 @@ namespace HousingCheck
             notifier.Start();
 
             statusLabel.Text = "Working :D";
-            vm.OnInvoke += (arg) =>
-            {
-                switch (arg)
-                {
-                    case "UploadManaually":
-                        UploadOnce();
-                        break;
-                    case "CopyToClipboard":
-                        CopySalesToClipboard();
-                        break;
-                    case "SaveToFile":
-                        SaveToCsv();
-                        break;
-                    case "TestNotification":
-                        notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false));
-                        break;
-                    default:
-                        break;
-                }
-            };
+
+            vm.UploadManually.OnExecute += (obj) => { UploadOnce(); };
+            vm.SaveToFile.OnExecute += (obj) => { SaveToCsv(); };
+            vm.CopyToClipboard.OnExecute += (obj) => { CopySalesToClipboard(); };
+            vm.TestNotification.OnExecute += (obj) => { notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false)); };
+            vm.CheckUpdate.OnExecute += (obj) => { CheckUpdate(); };
 
             PrepareDir();
             //恢复上次列表
             LoadHousingList();
+
+            if (config.AutoUpdate)
+            {
+                CheckUpdate();
+            }
         }
 
         void WriteActLog(string message)
         {
             var logText = $"00|{DateTime.Now.ToString("O")}|0|HousingCheck-{message}|";        //解析插件数据格式化
             LogQueue.Add((DateTime.Now, logText));
+        }
+
+        void CheckUpdate()
+        {
+            updater.Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            Task.Run(async () =>
+            {
+                logger.LogInfo("正在检查更新...当前版本: " + updater.Version);
+                try
+                {
+                    var updateInfo = await updater.CheckUpdateV2Async();
+                    if (updateInfo == null)
+                    {
+                        logger.LogInfo("当前使用的是最新版本.");
+                        return;
+                    }
+
+                    logger.LogInfo($"正在更新到新版本: {updateInfo.Value.Version} {updateInfo.Value.ChangeLog}");
+                    try
+                    {
+                        await updater.UpdateAsync(updateInfo.Value);
+                        logger.LogInfo("更新完毕，请重新加载插件或直接重启你的ACT。");
+
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogWarning("更新失败", e);
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.LogWarning("检查更新失败", e);
+                }
+            });
         }
 
         void NetworkSent(string connection, long epoch, byte[] message)
@@ -315,9 +355,9 @@ namespace HousingCheck
                 WriteActLog(logStr);
 
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogError("信息解析失败：" + ex.ToString());
+                logger.LogError("信息解析失败", e);
             }
         }
 
@@ -330,7 +370,7 @@ namespace HousingCheck
             }
             catch (Exception e)
             {
-                logger.LogError("信息解析失败：" + e.ToString());
+                logger.LogError("信息解析失败", e);
             }
         }
 
@@ -389,7 +429,7 @@ namespace HousingCheck
             }
             catch (Exception e)
             {
-                logger.LogError("房屋列表保存失败：" + e.Message);
+                logger.LogError("房屋列表保存失败", e);
             }
         }
 
@@ -402,9 +442,9 @@ namespace HousingCheck
                 storage.LoadSaleList(HousingListFile);
                 logger.LogInfo("已恢复上次保存的房屋列表");
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogError("恢复上次保存的房屋列表失败：" + ex.Message);
+                logger.LogError("恢复上次保存的房屋列表失败", e);
             }
         }
 
@@ -420,9 +460,9 @@ namespace HousingCheck
                 storage.ExportStorageToCsv(SnapshotDir);
                 logger.LogInfo($"已保存到 {SnapshotDir} 文件夹");
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogInfo("保存失败: " + ex.ToString());
+                logger.LogError("保存失败", e);
             }
         }
 
@@ -510,7 +550,7 @@ namespace HousingCheck
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("执行定时任务时出现错误: " + ex.Message);
+                    logger.LogError("执行定时任务时出现错误", ex);
                 }
 
                 Thread.Sleep(500);
@@ -540,14 +580,14 @@ namespace HousingCheck
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("房屋列表上报出错：" + e.Message);
+                    logger.LogError("房屋列表上报出错", e);
                 }
 
                 Thread.Sleep(1000);
             }
             catch (Exception e)
             {
-                logger.LogError("房屋列表上报出错：" + e.Message);
+                logger.LogError("房屋列表上报出错", e);
             }
         }
 
@@ -578,14 +618,14 @@ namespace HousingCheck
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("房区快照上报出错：" + e.Message);
+                    logger.LogError("房区快照上报出错", e);
                 }
 
                 Thread.Sleep(1000);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogError("房区快照上报出错：" + ex.Message);
+                logger.LogError("房区快照上报出错", e);
             }
         }
 
@@ -616,14 +656,14 @@ namespace HousingCheck
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("房屋详细信息上报出错：" + e.Message);
+                    logger.LogError("房屋详细信息上报出错", e);
                 }
 
                 Thread.Sleep(1000);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogError("房屋详细信息上报出错：" + ex.Message);
+                logger.LogError("房屋详细信息上报出错", e);
             }
         }
 
@@ -654,14 +694,14 @@ namespace HousingCheck
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("房屋售卖信息上报出错：" + e.Message);
+                    logger.LogError("房屋售卖信息上报出错" , e);
                 }
 
                 Thread.Sleep(1000);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                logger.LogError("房屋售卖信息上报出错：" + ex.Message);
+                logger.LogError("房屋售卖信息上报出错", e);
             }
         }
     }
@@ -693,10 +733,10 @@ namespace HousingCheck
             if ((int)info.Value.region_type >= 3) return false;
             if ((int)info.Value.status >= 4) return false;
 
-            var time = DateTimeOffset.Now.ToUnixTimeSeconds(); 
+            var time = DateTimeOffset.Now.ToUnixTimeSeconds();
             // 结束时间必须是整点，且必须大于当前时间
             if (info.Value.endTime % 3600 != 0 || info.Value.endTime < time) return false;
-            
+
             return true;
         }
     }

@@ -27,23 +27,6 @@ namespace HousingCheck
         {
             InitializeComponent();
         }
-
-        private void UploadManaually(object sender, RoutedEventArgs e)
-        {
-            (DataContext as PluginControlViewModel)?.Invoke("UploadManaually");
-        }
-        private void CopyToClipboard(object sender, RoutedEventArgs e)
-        {
-            (DataContext as PluginControlViewModel)?.Invoke("CopyToClipboard");
-        }
-        private void SaveToFile(object sender, RoutedEventArgs e)
-        {
-            (DataContext as PluginControlViewModel)?.Invoke("SaveToFile");
-        }
-        private void TestNotification(object sender, RoutedEventArgs e)
-        {
-            (DataContext as PluginControlViewModel)?.Invoke("TestNotification");
-        }
     }
 
     public static class AutoScrollBehavior
@@ -89,12 +72,11 @@ namespace HousingCheck
 
     public class LogItemToStringValueConverter : IValueConverter
     {
-
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is LogItem l)
             {
-                return string.Format("[{0}] [{1}] {2}", l.Time.ToLongTimeString(), l.Level, l.Content);
+                return l.ToShortString();
             }
             throw new NotImplementedException();
         }

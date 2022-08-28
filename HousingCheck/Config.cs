@@ -36,7 +36,10 @@ namespace HousingCheck
         /// 上报Token
         /// </summary>
         public string UploadToken { get; set; }
-
+        /// <summary>
+        /// 自动检查更新
+        /// </summary>
+        public bool AutoUpdate { get; set; }
         /// <summary>
         /// 是否启用TTS通知
         /// </summary>
@@ -143,6 +146,7 @@ namespace HousingCheck
                     UploadToken = head?.SelectSingleNode("UploadToken")?.InnerText;
                     AutoUpload = bool.Parse(head?.SelectSingleNode("AutoUpload")?.InnerText ?? "true");
                     EnableUploadSnapshot = bool.Parse(head?.SelectSingleNode("UploadSnapshot")?.InnerText ?? "true");
+                    AutoUpdate = bool.Parse(head?.SelectSingleNode("AutoUpdate")?.InnerText ?? "true");
                     EnableTTS = bool.Parse(head?.SelectSingleNode("TTSNotify")?.InnerText ?? "false");
                     EnableNotification = bool.Parse(head?.SelectSingleNode("ShellNotify")?.InnerText ?? "false");
                     EnableNotifyHouseML = bool.Parse(head?.SelectSingleNode("NotifyHouseML")?.InnerText ?? "true");
@@ -181,6 +185,7 @@ namespace HousingCheck
             xWriter.WriteElementString("AutoUpload", AutoUpload.ToString());
             //xWriter.WriteElementString("UploadMLOnly", checkBoxML.Checked.ToString());
             xWriter.WriteElementString("UploadSnapshot", EnableUploadSnapshot.ToString());
+            xWriter.WriteElementString("AutoUpdate", AutoUpdate.ToString());
             xWriter.WriteElementString("TTSNotify", EnableTTS.ToString());
             xWriter.WriteElementString("ShellNotify", EnableNotification.ToString());
             xWriter.WriteElementString("NotifyHouseS", EnableNotifyHouseS.ToString());

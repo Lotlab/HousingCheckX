@@ -5,6 +5,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Forms;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Lotlab.PluginCommon;
 
@@ -35,6 +36,7 @@ namespace HousingCheck
         public bool EnableUploadSnapshot { get => config.EnableUploadSnapshot; set { config.EnableUploadSnapshot = value; OnPropertyChanged(); } }
         public string UploadUrl { get => config.UploadUrl; set { config.UploadUrl = value; OnPropertyChanged(); } }
         public string UploadToken { get => config.UploadToken; set { config.UploadToken = value; OnPropertyChanged(); } }
+        public bool AutoUpdate { get => config.AutoUpdate; set { config.AutoUpdate = value; OnPropertyChanged(); } }
         public bool EnableTTS { get => config.EnableTTS; set { config.EnableTTS = value; OnPropertyChanged(); } }
         public bool EnableNotification { get => config.EnableNotification; set { config.EnableNotification = value; OnPropertyChanged(); } }
         public bool EnableNotifyHouseS { get => config.EnableNotifyHouseS; set { config.EnableNotifyHouseS = value; OnPropertyChanged(); } }
@@ -61,11 +63,27 @@ namespace HousingCheck
 
         public ObservableCollection<HousingOnSaleItem> Sales => storage.Sales;
 
-        public event Action<string> OnInvoke;
+        public SimpleCommand UploadManually { get; } = new SimpleCommand();
+        public SimpleCommand CopyToClipboard { get; } = new SimpleCommand();
+        public SimpleCommand SaveToFile { get; } = new SimpleCommand();
+        public SimpleCommand TestNotification { get; } = new SimpleCommand();
+        public SimpleCommand CheckUpdate { get; } = new SimpleCommand();
+    }
 
-        public void Invoke(string arg)
+    public class SimpleCommand : ICommand
+    {
+        public event EventHandler CanExecuteChanged;
+
+        public event Action<object> OnExecute;
+
+        public bool CanExecute(object parameter)
         {
-            OnInvoke?.Invoke(arg);
+            return true;
+        }
+
+        public void Execute(object parameter)
+        {
+            OnExecute?.Invoke(parameter);
         }
     }
 }

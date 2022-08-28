@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PluginCommon\PluginCommon.FFXIV\Lotlab.PluginCommon.FFXIV.csproj" />
+    <ProjectReference Include="..\PluginCommon\PluginCommon.Updater\Lotlab.PluginCommon.Updater.csproj" />
     <ProjectReference Include="..\PluginCommon\PluginCommon.WPF\Lotlab.PluginCommon.WPF.csproj" />
     <ProjectReference Include="..\PluginCommon\PluginCommon\Lotlab.PluginCommon.csproj" />
   </ItemGroup>

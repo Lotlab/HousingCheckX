@@ -26,9 +26,9 @@
                                         <ColumnDefinition></ColumnDefinition>
                                         <ColumnDefinition></ColumnDefinition>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Margin="3" Click="UploadManaually">手动上报一次</Button>
-                                    <Button Grid.Column="1" Margin="3" Click="SaveToFile">保存到文件</Button>
-                                    <Button Grid.Column="2" Margin="3" Click="CopyToClipboard">复制到剪贴板</Button>
+                                    <Button Grid.Column="0" Margin="3" Command="{Binding UploadManually}">手动上报一次</Button>
+                                    <Button Grid.Column="1" Margin="3" Command="{Binding SaveToFile}">保存到文件</Button>
+                                    <Button Grid.Column="2" Margin="3" Command="{Binding CopyToClipboard}">复制到剪贴板</Button>
                                 </Grid>
                             </GroupBox>
                         </DockPanel>
@@ -43,6 +43,16 @@
                 </TabItem>
                 <TabItem Header="设置">
                     <StackPanel DockPanel.Dock="Top">
+                        <GroupBox Header="通用设置" Padding="5,2">
+                            <Grid Height="26px">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition></ColumnDefinition>
+                                    <ColumnDefinition Width="60px"></ColumnDefinition>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding AutoUpdate}">启动时自动检查更新</CheckBox>
+                                <Button Grid.Column="1" Command="{Binding CheckUpdate}">检查更新</Button>
+                            </Grid>
+                        </GroupBox>
                         <GroupBox Header="通知设置" Padding="5,2">
                             <StackPanel>
                                 <Grid>
@@ -56,7 +66,7 @@
                                             <CheckBox VerticalContentAlignment="Center" IsChecked="{Binding EnableNotification}" Margin="10, 0, 0, 0">弹出通知 (Win8+)</CheckBox>
                                         </StackPanel>
                                     </StackPanel>
-                                    <Button Grid.Column="1" Click="TestNotification">测试</Button>
+                                    <Button Grid.Column="1" Command="{Binding TestNotification}">测试</Button>
                                 </Grid>
 
                                 <GroupBox Header="空房通知" Padding="5,2">
@@ -110,8 +120,10 @@
                         <GroupBox Header="调试设置" Padding="5,2" Visibility="{Binding DebugVisibility}">
                             <StackPanel>
                                 <Label>修改调试设置可能会造成插件工作不正常，请谨慎修改。</Label>
-                                <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding EnableOpcodeGuess}">启用Opcode猜测</CheckBox>
-                                <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding DisableOpcodeCheck}" IsEnabled="{Binding DisableOpcodeCheckEditable}">禁用Opcode过滤</CheckBox>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding EnableOpcodeGuess}">启用Opcode猜测</CheckBox>
+                                    <CheckBox VerticalContentAlignment="Center" Margin="20, 3, 0, 3" IsChecked="{Binding DisableOpcodeCheck}" IsEnabled="{Binding DisableOpcodeCheckEditable}">禁用Opcode过滤</CheckBox>
+                                </StackPanel>
                                 <CheckBox VerticalContentAlignment="Center" Margin="0, 3, 0, 3" IsChecked="{Binding UseCustomOpcode}" IsEnabled="{Binding UseCustomOpcodeEditable}">使用自定义Opcode</CheckBox>
                                 <GroupBox Header="自定义 Opcode" Padding="5,2" IsEnabled="{Binding CustomOpcodeEditable}">
                                     <Grid>
