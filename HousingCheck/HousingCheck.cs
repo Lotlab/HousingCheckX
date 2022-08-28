@@ -78,6 +78,7 @@ namespace HousingCheck
         NetworkParser parser = new NetworkParser();
         UploadApi api;
         ExtendedUpdater updater;
+        OpcodeRepo opcodeRepo;
 
         void IActPluginV1.DeInitPlugin()
         {
@@ -139,11 +140,12 @@ namespace HousingCheck
             notifier = new Notifier(config);
             api = new UploadApi(config);
             updater = new ExtendedUpdater("https://tools.lotlab.org/dl/ffxiv/HousingCheckXP/_update/", thisPlugin.pluginFile.DirectoryName);
+            opcodeRepo = new OpcodeRepo(logger,
+                Path.Combine(ActGlobals.oFormActMain.AppDataFolder.FullName, "Config", "HousingCheck.opcode.txt"),
+                "https://tools.lotlab.org/dl/ffxiv/HousingCheckXP/opcode.txt"
+            );
 
-            parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
-            parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
-            parser.SetOpcode<LandSaleInfo>((ushort)config.OpcodeSale);
-            parser.SetOpcode<ClientTrigger>((ushort)config.OpcodeClientTrigger);
+            updateOpcodeFromConfig();
 
             control = new PluginControlWpf();
             control.DataContext = vm;
@@ -184,6 +186,32 @@ namespace HousingCheck
             vm.CopyToClipboard.OnExecute += (obj) => { CopySalesToClipboard(); };
             vm.TestNotification.OnExecute += (obj) => { notifier.NotifyEmptyHouseAsync(new HousingOnSaleItem(HouseArea.海雾村, 1, 2, HouseSize.L, 10000000, false)); };
             vm.CheckUpdate.OnExecute += (obj) => { CheckUpdate(); };
+            vm.GetOnlineOpcode.OnExecute += async (obj) =>
+            {
+                logger.LogInfo("正在获取在线Opcode");
+                try
+                {
+                    await opcodeRepo.GetOnlineOpcode();
+                    opcodeRepo.SetOpcode(parser);
+                    logger.LogInfo("在线Opcode获取成功");
+                }
+                catch (Exception e)
+                {
+                    logger.LogWarning("在线Opcode获取失败", e);
+                }
+            };
+
+            vm.PropertyChanged += (object sender, PropertyChangedEventArgs e) =>
+            {
+                switch (e.PropertyName)
+                {
+                    case nameof(vm.UseCustomOpcode):
+                        updateOpcodeFromConfig();
+                        if (!config.UseCustomOpcode)
+                            opcodeRepo.SetOpcode(parser);
+                        break;
+                }
+            };
 
             PrepareDir();
             //恢复上次列表
@@ -193,6 +221,51 @@ namespace HousingCheck
             {
                 CheckUpdate();
             }
+
+            loadOpcode();
+        }
+
+        private void loadOpcode()
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    opcodeRepo.LoadLocalOpcode();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError("本地Opcode载入失败", e);
+                }
+
+                if (config.AutoUpdate)
+                {
+                    var gameVersion = ffxivPlugin.DataRepository.GetGameVersion();
+                    logger.LogInfo($"本地Opcode版本: {opcodeRepo.LocalVersion}，游戏版本: {gameVersion}");
+                    if (opcodeRepo.LocalVersion != gameVersion)
+                    {
+                        logger.LogInfo("正在获取在线Opcode");
+                        try
+                        {
+                            await opcodeRepo.GetOnlineOpcode();
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogWarning("在线Opcode获取失败", e);
+                        }
+                    }
+                }
+
+                opcodeRepo.SetOpcode(parser);
+            });
+        }
+
+        private void updateOpcodeFromConfig()
+        {
+            parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
+            parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
+            parser.SetOpcode<LandSaleInfo>((ushort)config.OpcodeSale);
+            parser.SetOpcode<ClientTrigger>((ushort)config.OpcodeClientTrigger);
         }
 
         void WriteActLog(string message)
@@ -694,7 +767,7 @@ namespace HousingCheck
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("房屋售卖信息上报出错" , e);
+                    logger.LogError("房屋售卖信息上报出错", e);
                 }
 
                 Thread.Sleep(1000);

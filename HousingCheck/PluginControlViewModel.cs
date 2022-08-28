@@ -68,6 +68,7 @@ namespace HousingCheck
         public SimpleCommand SaveToFile { get; } = new SimpleCommand();
         public SimpleCommand TestNotification { get; } = new SimpleCommand();
         public SimpleCommand CheckUpdate { get; } = new SimpleCommand();
+        public SimpleCommand GetOnlineOpcode { get; } = new SimpleCommand();
     }
 
     public class SimpleCommand : ICommand
