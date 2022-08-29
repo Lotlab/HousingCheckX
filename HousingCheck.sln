@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lotlab.PluginCommon.WPF", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lotlab.PluginCommon.Updater", "PluginCommon\PluginCommon.Updater\Lotlab.PluginCommon.Updater.csproj", "{DF994461-E5C8-4A0E-BA73-A0172A97A0BB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HousingCheck.Packer", "HousingCheck.Packer\HousingCheck.Packer.csproj", "{63AF3FEB-8B3F-49EF-9FD5-22149DFBB86F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lotlab.PluginCommon.Packer", "PluginCommon\PluginCommon.Packer\Lotlab.PluginCommon.Packer.csproj", "{727922E2-48AF-4DAC-B2D2-FAC437D49629}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +41,10 @@ Global
 		{DF994461-E5C8-4A0E-BA73-A0172A97A0BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF994461-E5C8-4A0E-BA73-A0172A97A0BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF994461-E5C8-4A0E-BA73-A0172A97A0BB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63AF3FEB-8B3F-49EF-9FD5-22149DFBB86F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63AF3FEB-8B3F-49EF-9FD5-22149DFBB86F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63AF3FEB-8B3F-49EF-9FD5-22149DFBB86F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63AF3FEB-8B3F-49EF-9FD5-22149DFBB86F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{727922E2-48AF-4DAC-B2D2-FAC437D49629}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{727922E2-48AF-4DAC-B2D2-FAC437D49629}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{727922E2-48AF-4DAC-B2D2-FAC437D49629}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{727922E2-48AF-4DAC-B2D2-FAC437D49629}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
