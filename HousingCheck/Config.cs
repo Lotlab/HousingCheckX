@@ -11,10 +11,10 @@ namespace HousingCheck
         /// <summary>
         /// 国服 Opcode
         /// </summary>
-        public const int OPCODE_WARD_INFO = 882;
-        public const int OPCODE_LAND_INFO = 998;
-        public const int OPCODE_SALE_INFO = 429;
-        public const int OPCODE_CLIENT_TRIGGER = 402;
+        public const int OPCODE_WARD_INFO = 567;
+        public const int OPCODE_LAND_INFO = 762;
+        public const int OPCODE_SALE_INFO = 138;
+        public const int OPCODE_CLIENT_TRIGGER = 559;
 
         /// <summary>
         /// 上报API版本
