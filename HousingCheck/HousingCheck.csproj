@@ -6,6 +6,7 @@
     <Version>1.7.1</Version>
     <Copyright>Copyright ©2021 Bluefissure, Hyperzlib. Copyright ©2021-2022 Lotlab</Copyright>
     <ILMergeDebugInfo>false</ILMergeDebugInfo>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ReferencePath>
@@ -54,6 +55,6 @@
     <ProjectReference Include="..\PluginCommon\PluginCommon\Lotlab.PluginCommon.csproj" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="$(TargetDir)..\..\..\..\PluginCommon\PluginCommon.Packer\bin\Release\net48\Lotlab.PluginCommon.Packer --src $(TargetDir) --name HousingCheckXP --entry HousingCheck.dll" />
+    <Exec Command="$(TargetDir)..\..\..\..\..\PluginCommon\PluginCommon.Packer\bin\x64\Release\net48\Lotlab.PluginCommon.Packer --src $(TargetDir) --name HousingCheckXP --entry HousingCheck.dll" />
   </Target>
 </Project>
