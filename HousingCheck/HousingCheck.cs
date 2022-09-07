@@ -70,8 +70,6 @@ namespace HousingCheck
         /// 状态信息
         /// </summary>
         Label statusLabel;
-        PluginControlWpf control;
-        PluginControlViewModel vm;
 
         Config config = new Config();
         SimpleLoggerSync logger;
@@ -136,7 +134,20 @@ namespace HousingCheck
             logger = new SimpleLoggerSync(Path.Combine(DataDir, "app.log"));
             logger.SetFilter(config.DebugEnabled ? LogLevel.DEBUG : LogLevel.INFO);
             storage = new DataStorage(logger);
-            vm = new PluginControlViewModel(config, logger, storage);
+
+            pluginScreenSpace.Text = "房屋信息记录";
+
+            var vm = new PluginControlViewModel(config, logger, storage);
+            var control = new PluginControlWpf();
+            control.DataContext = vm;
+            var host = new ElementHost()
+            {
+                Dock = DockStyle.Fill,
+                Child = control
+            };
+
+            pluginScreenSpace.Controls.Add(host);
+
             notifier = new Notifier(config);
             api = new UploadApi(config);
             updater = new ExtendedUpdater("https://tools.lotlab.org/dl/ffxiv/HousingCheckXP/_update/", thisPlugin.pluginFile.DirectoryName);
@@ -146,17 +157,6 @@ namespace HousingCheck
             );
 
             updateOpcodeFromConfig();
-
-            control = new PluginControlWpf();
-            control.DataContext = vm;
-            pluginScreenSpace.Text = "房屋信息记录";
-            var host = new ElementHost()
-            {
-                Dock = DockStyle.Fill,
-                Child = control
-            };
-
-            pluginScreenSpace.Controls.Add(host);
 
             ffxivPlugin.DataSubscription.NetworkReceived += NetworkReceived;
             ffxivPlugin.DataSubscription.NetworkSent += NetworkSent;
