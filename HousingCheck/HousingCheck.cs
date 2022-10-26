@@ -248,6 +248,7 @@ namespace HousingCheck
                         try
                         {
                             await opcodeRepo.GetOnlineOpcode();
+                            logger.LogInfo($"在线Opcode获取成功！版本：{opcodeRepo.LocalVersion}");
                         }
                         catch (Exception e)
                         {
@@ -262,6 +263,8 @@ namespace HousingCheck
 
         private void updateOpcodeFromConfig()
         {
+            parser.ClearOpcodes();
+
             parser.SetOpcode<HousingWardInfo>((ushort)config.OpcodeWard);
             parser.SetOpcode<LandInfoSign>((ushort)config.OpcodeLand);
             parser.SetOpcode<LandSaleInfo>((ushort)config.OpcodeSale);
@@ -310,18 +313,21 @@ namespace HousingCheck
 
         void NetworkSent(string connection, long epoch, byte[] message)
         {
-            var packet = parser.ParsePacket(message);
-            switch (packet)
+            try
             {
-                case ClientTrigger trigger:
-                    ClientTriggerParser(trigger);
-                    break;
-                default:
-                    break;
-            }
+                var packet = parser.ParsePacket(message);
+                switch (packet)
+                {
+                    case ClientTrigger trigger:
+                        ClientTriggerParser(trigger);
+                        break;
+                    default:
+                        break;
+                }
 
-            if (config.EnableOpcodeGuess)
-            {
+                // 猜测 Opcode
+                if (!config.EnableOpcodeGuess) return;
+
                 var ipc = parser.ParseIPCHeader(message);
                 var guessOpcode = ipc.Value.type;
                 if (message.Length == Marshal.SizeOf<FFXIVIpcClientTrigger>())
@@ -339,27 +345,36 @@ namespace HousingCheck
                     }
                 }
             }
+            catch (Exception e)
+            {
+                logger.LogError("数据包解析失败", e);
+                logger.LogDebug(message.ToHexString());
+            }
         }
 
         void NetworkReceived(string connection, long epoch, byte[] message)
         {
-            var packet = parser.ParsePacket(message);
-            switch (packet)
+            try
             {
-                case HousingWardInfo ward:
-                    WardInfoParser(ward);
-                    break;
-                case LandInfoSign land:
-                    LandInfoParser(land);
-                    break;
-                case LandSaleInfo sale:
-                    SaleInfoParser(sale);
-                    break;
-                default:
-                    break;
-            }
-            if (config.EnableOpcodeGuess)
-            {
+                var packet = parser.ParsePacket(message);
+                switch (packet)
+                {
+                    case HousingWardInfo ward:
+                        WardInfoParser(ward);
+                        break;
+                    case LandInfoSign land:
+                        LandInfoParser(land);
+                        break;
+                    case LandSaleInfo sale:
+                        SaleInfoParser(sale);
+                        break;
+                    default:
+                        break;
+                }
+
+                // 猜测 Opcode
+                if (!config.EnableOpcodeGuess) return;
+
                 var ipc = parser.ParseIPCHeader(message);
                 var guessOpcode = ipc.Value.type;
                 if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
@@ -396,55 +411,43 @@ namespace HousingCheck
                     }
                 }
             }
+            catch (Exception e)
+            {
+                logger.LogError("数据包解析失败", e);
+                logger.LogDebug(message.ToHexString());
+            }
         }
 
         void WardInfoParser(HousingWardInfo info)
         {
-            HousingSlotSnapshot snapshot;
-            List<HousingOnSaleItem> updatedHousingList = new List<HousingOnSaleItem>();
-            try
+            //解析数据包
+            var snapshot = new HousingSlotSnapshot(info);
+
+            var emptyHouses = storage.ProcessSnapshot(snapshot);
+            foreach (var house in emptyHouses)
             {
-                //解析数据包
-                snapshot = new HousingSlotSnapshot(info);
+                HousingOnSaleItem onSaleItem = new HousingOnSaleItem(house);
+                var str = string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
+                    onSaleItem.AreaStr, onSaleItem.DisplaySlot, onSaleItem.DisplayId,
+                    onSaleItem.SizeStr, onSaleItem.Price);
+                logger.LogInfo(str);
+                WriteActLog(str);
 
-                var emptyHouses = storage.ProcessSnapshot(snapshot);
-                foreach (var house in emptyHouses)
-                {
-                    HousingOnSaleItem onSaleItem = new HousingOnSaleItem(house);
-                    var str = string.Format("{0} 第{1}区 {2}号 {3}房在售 当前价格: {4}",
-                        onSaleItem.AreaStr, onSaleItem.DisplaySlot, onSaleItem.DisplayId,
-                        onSaleItem.SizeStr, onSaleItem.Price);
-                    logger.LogInfo(str);
-                    WriteActLog(str);
-
-                    notifier.NotifyEmptyHouseAsync(onSaleItem);
-                }
-
-                // 输出翻页日志
-                var logStr = string.Format("{0} 第{1}区查询完成",
-                    HousingItem.GetHouseAreaStr(snapshot.Area),
-                    snapshot.Slot + 1);
-                logger.LogInfo(logStr);
-                WriteActLog(logStr);
-
+                notifier.NotifyEmptyHouseAsync(onSaleItem);
             }
-            catch (Exception e)
-            {
-                logger.LogError("信息解析失败", e);
-            }
+
+            // 输出翻页日志
+            var logStr = string.Format("{0} 第{1}区查询完成",
+                HousingItem.GetHouseAreaStr(snapshot.Area),
+                snapshot.Slot + 1);
+            logger.LogInfo(logStr);
+            WriteActLog(logStr);
         }
 
         void LandInfoParser(LandInfoSign sign)
         {
-            try
-            {
-                var info = new HousingLandInfoSign(sign);
-                storage.ProcessInfoSign(info);
-            }
-            catch (Exception e)
-            {
-                logger.LogError("信息解析失败", e);
-            }
+            var info = new HousingLandInfoSign(sign);
+            storage.ProcessInfoSign(info);
         }
 
         void SaleInfoParser(LandSaleInfo sale)

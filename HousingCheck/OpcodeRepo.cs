@@ -29,6 +29,7 @@ namespace HousingCheck
 
         public void SetOpcode(NetworkParser parser)
         {
+            parser.ClearOpcodes();
             parser.SetOpcodes(opcodes);
         }
 

@@ -6,7 +6,7 @@
     <Version>1.7.1</Version>
     <Copyright>Copyright ©2021 Bluefissure, Hyperzlib. Copyright ©2021-2022 Lotlab</Copyright>
     <ILMergeDebugInfo>false</ILMergeDebugInfo>
-    <Platforms>x64</Platforms>
+    <Platforms>x64;anycpu</Platforms>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ReferencePath>
