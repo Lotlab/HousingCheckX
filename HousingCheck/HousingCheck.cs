@@ -329,6 +329,7 @@ namespace HousingCheck
                 if (!config.EnableOpcodeGuess) return;
 
                 var ipc = parser.ParseIPCHeader(message);
+                if (ipc == null) return;
                 var guessOpcode = ipc.Value.type;
                 if (message.Length == Marshal.SizeOf<FFXIVIpcClientTrigger>())
                 {
@@ -376,6 +377,8 @@ namespace HousingCheck
                 if (!config.EnableOpcodeGuess) return;
 
                 var ipc = parser.ParseIPCHeader(message);
+                if (ipc == null) return;
+
                 var guessOpcode = ipc.Value.type;
                 if (message.Length == Marshal.SizeOf<FFXIVIpcHousingWardInfo>())
                 {

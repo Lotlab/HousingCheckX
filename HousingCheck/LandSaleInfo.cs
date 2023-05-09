@@ -8,7 +8,7 @@ namespace HousingCheck
     {
         public override string ToString()
         {
-            return $"LandSaleInfo: {Value.purchase_type}, {Value.region_type}, {Value.status}. {Value.persons} participated, {Value.winner} win, ends at {DateTimeOffset.FromUnixTimeSeconds(Value.endTime).LocalDateTime}";
+            return $"LandSaleInfo: {Value.purchase_type}, {Value.region_type}, {Value.status} ({Value.unknown0},{Value.unknown1},{Value.unknown3}). {Value.persons} participated, {Value.winner} win, ends at {DateTimeOffset.FromUnixTimeSeconds(Value.endTime).LocalDateTime}";
         }
     }
 
@@ -27,14 +27,19 @@ namespace HousingCheck
         public HousePurchaseType purchase_type;
         public HouseRegionType region_type;
         public LandStatus status;
+        public byte unknown0;
+        public byte unknown1;
+
+        public byte padding0;
         public byte padding1;
+        public byte padding2;
 
         public UInt32 endTime;
-        public UInt32 padding2;
+        public UInt32 unknown3;
         public UInt32 persons;
         public UInt32 winner;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 12)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public byte[] unknown;
     }
 
