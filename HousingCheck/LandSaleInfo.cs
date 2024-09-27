@@ -41,6 +41,8 @@ namespace HousingCheck
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public byte[] unknown;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public byte[] unknown4;
     }
 
     public class ClientTrigger : IPCPacketBase<FFXIVIpcClientTrigger>
