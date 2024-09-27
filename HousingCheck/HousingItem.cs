@@ -56,6 +56,7 @@ namespace HousingCheck
 
     public enum HouseRegionType : byte
     {
+        All = 0,
         FC = 1,
         Personal = 2
     }

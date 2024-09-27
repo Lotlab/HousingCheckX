@@ -1,6 +1,7 @@
 ﻿using Lotlab.PluginCommon.FFXIV.Parser;
 using System.Runtime.InteropServices;
 using System;
+using System.Text;
 
 namespace HousingCheck
 {
@@ -8,16 +9,38 @@ namespace HousingCheck
     {
         public override string ToString()
         {
-            return $"LandSaleInfo: {Value.purchase_type}, {Value.region_type}, {Value.status} ({Value.unknown0},{Value.unknown1},{Value.unknown3}). {Value.persons} participated, {Value.winner} win, ends at {DateTimeOffset.FromUnixTimeSeconds(Value.endTime).LocalDateTime}";
+            var sb = new StringBuilder();
+            sb.Append("LandSaleInfo: ");
+            sb.AppendFormat("{0}, ", Value.purchase_type);
+            sb.AppendFormat("{0}, ", Value.region_type);
+            sb.AppendFormat("{0}, ", Value.status);
+            sb.AppendFormat("Unk: {0} {1}, ", Value.unknown0, Value.unknown1);
+            sb.AppendFormat("Pad: {0} {1} {2}. ", Value.padding0, Value.padding1, Value.padding2);
+            sb.AppendFormat("{0} participated, ", Value.persons);
+            sb.AppendFormat("your number is {0}, {1} win, ", Value.player_number, Value.winner);
+            sb.AppendFormat("ends at {0}, ", DateTimeOffset.FromUnixTimeSeconds(Value.endTime).LocalDateTime);
+            sb.AppendFormat("refund {0} until {1}.", Value.refund_amount, DateTimeOffset.FromUnixTimeSeconds(Value.refund_expiry_time).LocalDateTime);
+            return sb.ToString();
         }
     }
 
     public enum LandStatus : byte
     {
+        FCFS = 0,
         Available = 1,
         InResultsPeriod = 2,
         Unavailable = 3
     }
+
+    public enum LotteryPlayerResult : byte
+    {
+        NoEntry,
+        Entered,
+        Winner,
+        WinnerForfeit,
+        Loser,
+        RefundExpired,
+    };
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct FFXIVIpcLandSaleInfo
@@ -35,12 +58,11 @@ namespace HousingCheck
         public byte padding2;
 
         public UInt32 endTime;
-        public UInt32 unknown3;
+        public UInt32 refund_expiry_time;
         public UInt32 persons;
         public UInt32 winner;
-
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public byte[] unknown;
+        public UInt32 player_number;
+        public UInt32 refund_amount;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public byte[] unknown4;
     }
